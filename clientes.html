@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html" class="ativo">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <div class="cabecalho-pagina">
+        <h1>Clientes</h1>
+        <button id="btn-novo-cliente" class="btn-primario">+ Novo Cliente</button>
+      </div>
+
+      <div class="campo-busca">
+        <input type="text" id="busca-cliente" placeholder="Buscar por nome ou telefone...">
+      </div>
+
+      <div id="lista-clientes" class="tabela-container">
+        <p class="lista-vazia">Carregando clientes...</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO -->
+  <div id="modal-cliente" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2 id="modal-titulo">Novo Cliente</h2>
+      <form id="form-cliente">
+        <input type="hidden" id="cliente-id">
+
+        <div class="campo">
+          <label for="cliente-nome">Nome *</label>
+          <input type="text" id="cliente-nome" required>
+        </div>
+
+        <div class="campo">
+          <label for="cliente-telefone">Telefone</label>
+          <input type="tel" id="cliente-telefone" placeholder="(00) 00000-0000">
+        </div>
+
+        <div class="campo">
+          <label for="cliente-email">E-mail</label>
+          <input type="email" id="cliente-email">
+        </div>
+
+        <div class="campo">
+          <label for="cliente-endereco">Endereço</label>
+          <input type="text" id="cliente-endereco">
+        </div>
+
+        <div class="campo">
+          <label for="cliente-observacoes">Observações</label>
+          <input type="text" id="cliente-observacoes">
+        </div>
+
+        <div id="modal-mensagem-erro" class="mensagem-erro"></div>
+
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-modal" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALHES / HISTÓRICO DO CLIENTE -->
+  <div id="modal-historico" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2 id="historico-titulo">Cliente</h2>
+      <p class="mov-detalhes" id="historico-contato"></p>
+
+      <h2 style="margin-top:16px;">Histórico</h2>
+      <div id="historico-conteudo" class="tabela-container">
+        <p class="lista-vazia">Nenhum registro ainda.</p>
+      </div>
+
+      <div class="modal-botoes">
+        <button type="button" id="btn-fechar-historico" class="btn-secundario-claro">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="clientes.js"></script>
+</body>
+</html>

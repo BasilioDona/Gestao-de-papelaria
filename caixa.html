@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caixa - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html" class="ativo">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <h1>Caixa</h1>
+
+      <!-- ESTADO: SEM CAIXA ABERTO -->
+      <div id="area-sem-caixa" class="card-caixa escondido">
+        <p class="lista-vazia">Você não possui caixa aberto no momento.</p>
+        <div class="campo">
+          <label for="valor-abertura">Valor de abertura (MT)</label>
+          <input type="number" id="valor-abertura" step="0.01" min="0" value="0">
+        </div>
+        <div class="campo">
+          <label for="obs-abertura">Observações</label>
+          <input type="text" id="obs-abertura" placeholder="Opcional">
+        </div>
+        <button id="btn-abrir-caixa" class="btn-primario">Abrir Caixa</button>
+      </div>
+
+      <!-- ESTADO: CAIXA ABERTO -->
+      <div id="area-caixa-aberto" class="card-caixa escondido">
+<div class="cards-grid">
+          <div class="card">
+            <span class="card-titulo">Abertura</span>
+            <span class="card-valor" id="info-valor-abertura">0,00 MT</span>
+          </div>
+          <div class="card">
+            <span class="card-titulo">Vendas (dinheiro)</span>
+            <span class="card-valor" id="info-vendas-dinheiro">0,00 MT</span>
+          </div>
+          <div class="card">
+            <span class="card-titulo">Serviços (dinheiro)</span>
+            <span class="card-valor" id="info-servicos-dinheiro">0,00 MT</span>
+          </div>
+          <div class="card">
+            <span class="card-titulo">Dívidas recebidas (dinheiro)</span>
+            <span class="card-valor" id="info-dividas-recebidas-dinheiro">0,00 MT</span>
+          </div>
+          <div class="card">
+            <span class="card-titulo">Sangrias/Suprimentos</span>
+            <span class="card-valor" id="info-saldo-movimentacoes">0,00 MT</span>
+          </div>
+</div>
+
+        <div class="card-caixa" style="background:#f0f9ff; margin-top:12px;">
+          <div class="card-titulo">Valor esperado em caixa (dinheiro físico)</div>
+          <div class="card-valor" id="info-valor-esperado" style="font-size:26px;">MT 0,00</div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h2>Resumo por forma de pagamento (recebido)</h2>
+          <div id="resumo-formas-pagamento" class="tabela-container">
+            <p class="lista-vazia">Carregando...</p>
+          </div>
+        </div>
+
+  <div id="bloco-dividas-caixa" class="escondido" style="margin-top:12px;">
+          <div class="card-caixa" style="background:#fef3c7; border-left:4px solid #d97706;">
+            <div class="card-titulo">Dívidas registadas neste caixa (não contam como dinheiro em caixa)</div>
+            <div class="card-valor" id="info-total-dividas-caixa" style="font-size:20px; color:#d97706;">0,00 MT</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h2>Dívidas recebidas neste caixa</h2>
+          <div id="lista-dividas-recebidas" class="tabela-container">
+            <p class="lista-vazia">Nenhum recebimento de dívida neste caixa ainda.</p>
+          </div>
+        </div>
+
+        <div class="cabecalho-pagina" style="margin-top:20px;">
+          <h2 style="margin:0;">Sangrias e Suprimentos</h2>
+          <button id="btn-nova-mov-caixa" class="btn-primario">+ Movimentação</button>
+        </div>
+
+        <div id="lista-mov-caixa" class="tabela-container">
+          <p class="lista-vazia">Nenhuma movimentação neste caixa.</p>
+        </div>
+
+        <button id="btn-fechar-caixa" class="btn-secundario-claro" style="margin-top:20px; color:#dc2626; border-color:#dc2626;">Fechar Caixa</button>
+      </>
+
+      <!-- HISTÓRICO DE CAIXAS DO PRÓPRIO USUÁRIO -->
+      <div style="margin-top:32px;">
+        <h2>Meu Histórico de Caixas</h2>
+        <div id="lista-meu-historico" class="tabela-container">
+          <p class="lista-vazia">Carregando histórico...</p>
+        </div>
+      </div>
+
+      <!-- LISTA DE CAIXAS (ADMIN) -->
+      <div id="area-admin-caixas" class="escondido" style="margin-top:32px;">
+        <h2>Todos os Caixas</h2>
+        <div class="filtro-abas">
+          <button class="aba ativa" data-status="todos">Todos</button>
+          <button class="aba" data-status="aberto">Abertos</button>
+          <button class="aba" data-status="fechado">Fechados</button>
+        </div>
+        <div id="lista-todos-caixas" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+    </main>
+
+  </>
+
+  <!-- MODAL: FECHAR CAIXA -->
+  <div id="modal-fechar-caixa" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Fechar Caixa</h2>
+      <p class="mov-detalhes">Valor esperado (dinheiro): <strong id="fechamento-valor-esperado">MT 0,00</strong></p>
+      <form id="form-fechar-caixa">
+        <div class="campo">
+          <label for="valor-fechamento">Valor contado em caixa (MT) *</label>
+          <input type="number" id="valor-fechamento" step="0.01" min="0" required>
+        </div>
+        <div id="fechamento-diferenca" class="dica-campo"></div>
+        <div class="campo">
+          <label for="obs-fechamento">Observações</label>
+          <input type="text" id="obs-fechamento" placeholder="Opcional">
+        </div>
+        <div id="modal-mensagem-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-fechamento" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Confirmar Fechamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SANGRIA / SUPRIMENTO -->
+  <div id="modal-mov-caixa" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Nova Movimentação</h2>
+      <form id="form-mov-caixa">
+        <div class="campo">
+          <label for="mov-caixa-tipo">Tipo *</label>
+          <select id="mov-caixa-tipo" required>
+            <option value="sangria">Sangria (retirada)</option>
+            <option value="suprimento">Suprimento (entrada)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="mov-caixa-valor">Valor (MT) *</label>
+          <input type="number" id="mov-caixa-valor" step="0.01" min="0.01" required>
+        </div>
+        <div class="campo">
+          <label for="mov-caixa-motivo">Motivo</label>
+          <input type="text" id="mov-caixa-motivo">
+        </div>
+        <div id="modal-mov-mensagem-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-mov-caixa" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="caixa.js"></script>
+</body>
+</html>

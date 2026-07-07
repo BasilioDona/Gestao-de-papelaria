@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral" id="menu-lateral">
+      <a href="dashboard.html" class="ativo">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <h1>Dashboard</h1>
+
+      <div class="cards-grid">
+        <div class="card">
+          <span class="card-titulo">Vendido hoje</span>
+          <span class="card-valor" id="card-vendido-hoje">0,00 MT</span>
+        </div>
+        <div class="card">
+          <span class="card-titulo">Serviços hoje</span>
+          <span class="card-valor" id="card-servicos-hoje">0</span>
+        </div>
+        <div class="card">
+          <span class="card-titulo">Produtos em falta</span>
+          <span class="card-valor" id="card-produtos-falta">0</span>
+        </div>
+        <div class="card">
+          <span class="card-titulo">Caixa</span>
+          <span class="card-valor" id="card-status-caixa">Fechado</span>
+        </div>
+      </div>
+
+      <div id="area-alertas-admin" class="escondido" style="margin-top:8px;">
+        <h2>Alertas</h2>
+        <div id="lista-alertas" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+
+      <h2>Arrecadação de hoje por forma de pagamento</h2>
+      <div id="resumo-formas-hoje" class="tabela-container">
+        <p class="lista-vazia">Carregando...</p>
+      </div>
+
+      <h2>Últimas vendas</h2>
+      <div id="lista-ultimas-vendas" class="tabela-container">
+        <p class="lista-vazia">Carregando...</p>
+      </div>
+
+      <h2>Últimos serviços</h2>
+      <div id="lista-ultimos-servicos" class="tabela-container">
+        <p class="lista-vazia">Carregando...</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

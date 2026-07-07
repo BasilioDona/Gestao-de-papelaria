@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html" class="ativo">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <div class="cabecalho-pagina">
+        <h1>Produtos</h1>
+        <button id="btn-novo-produto" class="btn-primario">+ Novo Produto</button>
+      </div>
+
+      <div class="campo-busca">
+        <input type="text" id="busca-produto" placeholder="Buscar por nome, código ou código de barras...">
+      </div>
+
+      <div id="lista-produtos" class="tabela-container">
+        <p class="lista-vazia">Carregando produtos...</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL DE CADASTRO / EDIÇÃO -->
+  <div id="modal-produto" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2 id="modal-titulo">Novo Produto</h2>
+      <form id="form-produto">
+        <input type="hidden" id="produto-id">
+
+        <div class="campo">
+          <label for="produto-codigo">Código *</label>
+          <input type="text" id="produto-codigo" required>
+        </div>
+
+        <div class="campo">
+          <label for="produto-codigo-barras">Código de barras</label>
+          <input type="text" id="produto-codigo-barras">
+        </div>
+
+        <div class="campo">
+          <label for="produto-nome">Nome *</label>
+          <input type="text" id="produto-nome" required>
+        </div>
+
+        <div class="campo">
+          <label for="produto-categoria">Categoria</label>
+          <select id="produto-categoria">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="produto-preco-compra">Preço de compra (MT) *</label>
+          <input type="number" id="produto-preco-compra" step="0.01" min="0">
+        </div>
+
+        <div class="campo">
+          <label for="produto-preco-venda">Preço de venda (MT) *</label>
+          <input type="number" id="produto-preco-venda" step="0.01" min="0" required>
+        </div>
+
+        <div class="campo">
+          <label for="produto-quantidade">Quantidade</label>
+          <input type="number" id="produto-quantidade" min="0">
+        </div>
+
+        <div class="campo">
+          <label for="produto-estoque-minimo">Estoque mínimo</label>
+          <input type="number" id="produto-estoque-minimo" min="0">
+        </div>
+
+        <div class="campo">
+          <label for="produto-fornecedor">Fornecedor</label>
+          <input type="text" id="produto-fornecedor">
+        </div>
+
+        <div id="modal-mensagem-erro" class="mensagem-erro"></div>
+
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-modal" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="produtos.js"></script>
+</body>
+</html>

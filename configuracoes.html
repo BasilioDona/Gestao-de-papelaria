@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" class="ativo" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <h1>Configurações</h1>
+
+      <div class="filtro-abas" id="filtro-config">
+        <button class="aba ativa" data-secao="empresa">Empresa</button>
+        <button class="aba" data-secao="categorias">Categorias</button>
+        <button class="aba" data-secao="servicos-tipo">Tipos de Serviço</button>
+        <button class="aba" data-secao="pagamentos">Formas de Pagamento</button>
+        <button class="aba" data-secao="manutencao">Manutenção</button>
+      </div>
+
+      <!-- SEÇÃO: EMPRESA -->
+      <div id="secao-empresa" class="card-caixa">
+        <form id="form-empresa">
+          <div class="campo">
+            <label for="empresa-nome">Nome da Papelaria *</label>
+            <input type="text" id="empresa-nome" required>
+          </div>
+          <div class="campo">
+            <label for="empresa-nuit">NUIT</label>
+            <input type="text" id="empresa-nuit" placeholder="Número Único de Identificação Tributária">
+          </div>
+          <div class="campo">
+            <label for="empresa-endereco">Endereço</label>
+            <input type="text" id="empresa-endereco">
+          </div>
+          <div class="campo">
+            <label for="empresa-telefone">Telefone</label>
+            <input type="text" id="empresa-telefone">
+          </div>
+          <div class="campo">
+            <label for="empresa-email">E-mail</label>
+            <input type="email" id="empresa-email">
+          </div>
+          <div class="campo">
+            <label for="empresa-taxa-imposto">Taxa de imposto (%) — informativo</label>
+            <input type="number" id="empresa-taxa-imposto" step="0.01" min="0">
+            <span class="dica-campo">Não é calculado automaticamente nas vendas — apenas para referência e recibos.</span>
+          </div>
+          <div class="campo">
+            <label for="empresa-obs-imposto">Observações sobre impostos</label>
+            <input type="text" id="empresa-obs-imposto" placeholder="Ex: IVA incluído no preço">
+          </div>
+          <div id="empresa-mensagem" class="mensagem-erro"></div>
+          <button type="submit" class="btn-primario">Salvar Dados da Empresa</button>
+        </form>
+      </div>
+
+      <!-- SEÇÃO: CATEGORIAS -->
+      <div id="secao-categorias" class="escondido">
+        <div class="cabecalho-pagina">
+          <h2 style="margin:0;">Categorias de Produtos</h2>
+          <button id="btn-nova-categoria" class="btn-primario">+ Nova</button>
+        </div>
+        <div id="lista-categorias" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- SEÇÃO: TIPOS DE SERVIÇO -->
+      <div id="secao-servicos-tipo" class="escondido">
+        <div class="cabecalho-pagina">
+          <h2 style="margin:0;">Tipos de Serviço</h2>
+          <button id="btn-novo-tipo-servico" class="btn-primario">+ Novo Tipo</button>
+        </div>
+        <div id="lista-tipos-servico" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+
+        <h2 style="margin-top:24px;">Preços por Página</h2>
+        <div class="cabecalho-pagina">
+          <p class="mov-detalhes" style="margin:0;">Cadastre o preço por página para tipos que cobram assim (impressão, fotocópia, etc.)</p>
+          <button id="btn-novo-preco-servico" class="btn-primario">+ Preço</button>
+        </div>
+        <div id="lista-precos-servico" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- SEÇÃO: FORMAS DE PAGAMENTO -->
+      <div id="secao-pagamentos" class="escondido">
+        <h2>Formas de Pagamento Aceitas</h2>
+        <div id="lista-pagamentos" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- SEÇÃO: MANUTENÇÃO -->
+      <div id="secao-manutencao" class="escondido">
+        <div class="card-caixa">
+          <h2 style="margin-top:0;">Limpar Histórico de Estoque</h2>
+          <p class="mov-detalhes">
+            Remove permanentemente movimentações de estoque (entradas, saídas, ajustes) anteriores à data escolhida.
+            Esta ação não pode ser desfeita.
+          </p>
+          <div class="campo" style="margin-top:12px;">
+            <label for="limite-data-estoque">Excluir movimentações anteriores a:</label>
+            <input type="date" id="limite-data-estoque">
+          </div>
+          <button id="btn-limpar-estoque" class="btn-secundario-claro" style="color:#dc2626; border-color:#dc2626;">Limpar Histórico de Estoque</button>
+          <p id="status-limpeza-estoque" class="mov-detalhes"></p>
+        </div>
+
+        <div class="card-caixa" style="margin-top:16px;">
+          <h2 style="margin-top:0;">Limpar Caixas Vazios Antigos</h2>
+          <p class="mov-detalhes">
+            Remove permanentemente caixas <strong>fechados</strong> e <strong>sem nenhuma venda ou serviço vinculado</strong>,
+            anteriores à data escolhida. Caixas com movimento financeiro real nunca são removidos, mesmo antigos.
+          </p>
+          <div class="campo" style="margin-top:12px;">
+            <label for="limite-data-caixa">Excluir caixas vazios anteriores a:</label>
+            <input type="date" id="limite-data-caixa">
+          </div>
+          <button id="btn-limpar-caixas" class="btn-secundario-claro" style="color:#dc2626; border-color:#dc2626;">Limpar Caixas Vazios</button>
+          <p id="status-limpeza-caixa" class="mov-detalhes"></p>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- MODAL: CATEGORIA -->
+  <div id="modal-categoria" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2 id="modal-categoria-titulo">Nova Categoria</h2>
+      <form id="form-categoria">
+        <input type="hidden" id="categoria-id">
+        <div class="campo">
+          <label for="categoria-nome">Nome *</label>
+          <input type="text" id="categoria-nome" required>
+        </div>
+        <div id="modal-categoria-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" class="btn-cancelar-generico btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TIPO DE SERVIÇO -->
+  <div id="modal-tipo-servico" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Novo Tipo de Serviço</h2>
+      <form id="form-tipo-servico">
+        <div class="campo">
+          <label for="tipo-servico-chave">Identificador interno *</label>
+          <input type="text" id="tipo-servico-chave" required placeholder="ex: xerox_rg (sem espaços/acentos)">
+        </div>
+        <div class="campo">
+          <label for="tipo-servico-nome">Nome exibido *</label>
+          <input type="text" id="tipo-servico-nome" required placeholder="ex: Xerox de RG">
+        </div>
+        <div id="modal-tipo-servico-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" class="btn-cancelar-generico btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PREÇO POR PÁGINA -->
+  <div id="modal-preco-servico" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Novo Preço por Página</h2>
+      <form id="form-preco-servico">
+        <div class="campo">
+          <label for="preco-servico-tipo">Tipo de serviço *</label>
+          <select id="preco-servico-tipo" required>
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="preco-servico-cor">Cor *</label>
+          <select id="preco-servico-cor" required>
+            <option value="pb">Preto e branco</option>
+            <option value="colorido">Colorido</option>
+            <option value="unica">Padrão (sem distinção de cor)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="preco-servico-valor">Preço por página (MT) *</label>
+          <input type="number" id="preco-servico-valor" step="0.01" min="0" required>
+        </div>
+        <div id="modal-preco-servico-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" class="btn-cancelar-generico btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="configuracoes.js"></script>
+</body>
+</html>

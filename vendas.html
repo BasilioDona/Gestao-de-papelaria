@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas (PDV) - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html" class="ativo">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <h1>Vendas (PDV)</h1>
+
+      <div id="aviso-sem-caixa" class="card-caixa escondido">
+        <p class="lista-vazia">Você precisa abrir o caixa antes de vender.</p>
+        <a href="caixa.html" class="btn-primario" style="display:inline-block; text-align:center; text-decoration:none;">Ir para o Caixa</a>
+      </div>
+
+      <div id="area-pdv" class="escondido">
+
+        <div class="campo-busca">
+          <input type="text" id="busca-produto-pdv" placeholder="Buscar por nome, código ou código de barras..." autofocus>
+        </div>
+
+        <div id="resultado-busca" class="tabela-container escondido"></div>
+
+        <h2>Carrinho</h2>
+        <div id="carrinho" class="tabela-container">
+          <p class="lista-vazia">Nenhum item no carrinho.</p>
+        </div>
+
+        <div class="card-caixa" style="margin-top:16px;">
+          <div class="campo">
+            <label for="pdv-cliente">Cliente (opcional)</label>
+            <select id="pdv-cliente">
+              <option value="">Cliente não identificado</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="pdv-desconto">Desconto (MT)</label>
+            <input type="number" id="pdv-desconto" step="0.01" min="0" value="0">
+          </div>
+
+          <div class="campo">
+            <label for="pdv-pagamento">Forma de pagamento *</label>
+            <select id="pdv-pagamento" required></select>
+          </div>
+
+          <div class="campo escondido" id="bloco-vencimento-venda">
+            <label for="pdv-vencimento">Data de vencimento *</label>
+            <input type="date" id="pdv-vencimento">
+            <span class="dica-campo">Prazo para o cliente pagar esta dívida.</span>
+          </div>
+
+          <div class="pdv-totais">
+            <div><span>Subtotal:</span> <strong id="pdv-subtotal">0,00 MT</strong></div>
+            <div><span>Desconto:</span> <strong id="pdv-desconto-exibido">0,00 MT</strong></div>
+            <div class="pdv-total-final"><span>Total:</span> <strong id="pdv-total">0,00 MT</strong></div>
+          </div>
+
+          <div class="campo">
+            <label for="pdv-valor-recebido">Valor recebido (MT)</label>
+            <input type="number" id="pdv-valor-recebido" step="0.01" min="0" placeholder="Ex: 100">
+          </div>
+
+          <div class="pdv-totais">
+            <div><span>Troco:</span> <strong id="pdv-troco">0,00 MT</strong></div>
+          </div>
+
+          <div id="pdv-mensagem-erro" class="mensagem-erro"></div>
+
+          <button id="btn-finalizar-venda" class="btn-primario">Finalizar Venda</button>
+        </div>
+      </div>
+
+      <div style="margin-top:32px;">
+        <div class="cabecalho-pagina">
+          <h2 style="margin:0;">Histórico de Vendas</h2>
+        </div>
+        <div class="campo-busca">
+          <input type="text" id="busca-historico-venda" placeholder="Buscar por número ou cliente...">
+        </div>
+        <div id="lista-historico-vendas" class="tabela-container">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL: RECIBO -->
+  <div id="modal-recibo" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Recibo</h2>
+      <div id="recibo-conteudo"></div>
+      <div class="modal-botoes">
+        <button type="button" id="btn-imprimir-recibo" class="btn-secundario-claro">Imprimir/Compartilhar</button>
+        <button type="button" id="btn-fechar-recibo" class="btn-primario">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECEBER PAGAMENTO DE DÍVIDA -->
+  <div id="modal-receber-divida" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Registrar Recebimento</h2>
+      <form id="form-receber-divida">
+        <input type="hidden" id="receber-divida-id">
+        <div class="campo">
+          <label for="receber-divida-forma">Forma de pagamento recebida *</label>
+          <select id="receber-divida-forma" required>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="emola">e-Mola</option>
+            <option value="transferencia">Transferência Bancária</option>
+          </select>
+        </div>
+        <div id="modal-receber-divida-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-receber-divida" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Confirmar Recebimento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="vendas.js"></script>
+</body>
+</html>

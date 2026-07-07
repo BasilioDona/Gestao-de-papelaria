@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html" class="ativo">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <h1>Relatórios</h1>
+
+      <div class="filtro-abas" id="filtro-tipo-relatorio">
+        <button class="aba ativa" data-tipo="vendas">Vendas</button>
+        <button class="aba" data-tipo="produtos">Mais Vendidos</button>
+        <button class="aba" data-tipo="lucro" id="aba-lucro">Lucro</button>
+        <button class="aba" data-tipo="caixa">Caixa</button>
+        <button class="aba" data-tipo="estoque">Estoque</button>
+        <button class="aba" data-tipo="clientes">Clientes</button>
+        <button class="aba" data-tipo="servicos">Serviços</button>
+        <button class="aba" data-tipo="funcionarios" id="aba-funcionarios">Funcionários</button>
+      </div>
+
+      <div class="card-caixa" style="margin-bottom:16px;">
+        <div class="cabecalho-pagina" style="margin:0;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; flex:1;">
+            <div class="campo" style="margin:0; min-width:140px;">
+              <label for="data-inicio">De</label>
+              <input type="date" id="data-inicio">
+            </div>
+            <div class="campo" style="margin:0; min-width:140px;">
+              <label for="data-fim">Até</label>
+              <input type="date" id="data-fim">
+            </div>
+          </div>
+          <button id="btn-gerar-relatorio" class="btn-primario">Gerar</button>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="resumo-relatorio"></div>
+
+      <div id="conteudo-relatorio" class="tabela-container" style="margin-top:16px;">
+        <p class="lista-vazia">Selecione um período e clique em Gerar.</p>
+      </div>
+
+      <button id="btn-exportar-pdf" class="btn-secundario-claro escondido" style="margin-top:16px;">Exportar em PDF</button>
+    </main>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="supabase.js"></script>
+  <script src="relatorios.js"></script>
+</body>
+</html>

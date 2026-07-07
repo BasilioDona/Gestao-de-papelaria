@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serviços - Sistema Papelaria</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <header class="topbar">
+      <div class="topbar-titulo">
+        <span id="nome-usuario"></span>
+        <span id="tipo-usuario" class="badge"></span>
+      </div>
+      <button id="btn-logout" class="btn-secundario">Sair</button>
+    </header>
+
+    <nav class="menu-lateral">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="produtos.html">Produtos</a>
+      <a href="estoque.html">Estoque</a>
+      <a href="clientes.html">Clientes</a>
+      <a href="servicos.html" class="ativo">Serviços</a>
+      <a href="vendas.html">Vendas (PDV)</a>
+      <a href="caixa.html">Caixa</a>
+      <a href="relatorios.html">Relatórios</a>
+      <a href="usuarios.html" id="link-usuarios">Usuários</a>
+      <a href="configuracoes.html" id="link-config">Configurações</a>
+    </nav>
+
+    <main class="conteudo">
+      <div class="cabecalho-pagina">
+        <h1>Serviços</h1>
+        <button id="btn-novo-servico" class="btn-primario">+ Novo Serviço</button>
+      </div>
+
+      <div id="aviso-sem-caixa" class="card-caixa escondido">
+        <p class="lista-vazia">Você precisa abrir o caixa antes de registrar serviços.</p>
+        <a href="caixa.html" class="btn-primario" style="display:inline-block; text-align:center; text-decoration:none;">Ir para o Caixa</a>
+      </div>
+
+      <div class="filtro-abas" id="filtro-situacao">
+        <button class="aba ativa" data-situacao="todos">Todos</button>
+        <button class="aba" data-situacao="pendente">Pendente</button>
+        <button class="aba" data-situacao="em_execucao">Em execução</button>
+        <button class="aba" data-situacao="pronto">Pronto</button>
+        <button class="aba" data-situacao="entregue">Entregue</button>
+        <button class="aba" data-situacao="cancelado">Cancelado</button>
+      </div>
+
+      <div id="lista-servicos" class="tabela-container">
+        <p class="lista-vazia">Carregando serviços...</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- MODAL DE CADASTRO -->
+  <div id="modal-servico" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Novo Serviço</h2>
+      <form id="form-servico">
+
+        <div class="campo">
+          <label for="servico-tipo">Tipo *</label>
+          <select id="servico-tipo" required>
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+
+        <div class="campo escondido" id="bloco-cor">
+          <label for="servico-cor">Cor *</label>
+          <select id="servico-cor">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+
+        <div class="campo escondido" id="bloco-paginas">
+          <label for="servico-paginas">Número de páginas</label>
+          <input type="number" id="servico-paginas" min="1">
+          <span class="dica-campo">O valor abaixo será calculado automaticamente, mas pode ser ajustado.</span>
+        </div>
+
+        <div class="campo">
+          <label for="servico-cliente">Cliente</label>
+          <select id="servico-cliente">
+            <option value="">Sem cliente identificado</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="servico-descricao">Descrição</label>
+          <input type="text" id="servico-descricao" placeholder="Ex: 50 cópias frente e verso">
+        </div>
+
+        <div class="campo">
+          <label for="servico-valor">Valor (MT) *</label>
+          <input type="number" id="servico-valor" step="0.01" min="0" required>
+        </div>
+
+        <div class="campo">
+          <label for="servico-pagamento">Forma de pagamento *</label>
+          <select id="servico-pagamento" required></select>
+        </div>
+
+        <div class="campo escondido" id="bloco-vencimento-servico">
+          <label for="servico-vencimento">Data de vencimento *</label>
+          <input type="date" id="servico-vencimento">
+          <span class="dica-campo">Prazo para o cliente pagar esta dívida.</span>
+        </div>
+
+        <div class="campo">
+          <label for="servico-valor-recebido">Valor recebido (MT)</label>
+          <input type="number" id="servico-valor-recebido" step="0.01" min="0" placeholder="Ex: 50">
+          <span class="dica-campo" id="servico-troco-dica"></span>
+        </div>
+
+        <div id="modal-mensagem-erro" class="mensagem-erro"></div>
+
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-modal" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RECIBO -->
+  <div id="modal-recibo" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Recibo</h2>
+      <div id="recibo-conteudo"></div>
+      <div class="modal-botoes">
+        <button type="button" id="btn-imprimir-recibo" class="btn-secundario-claro">Imprimir/Compartilhar</button>
+        <button type="button" id="btn-fechar-recibo" class="btn-primario">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- MODAL: RECEBER PAGAMENTO DE DÍVIDA -->
+  <div id="modal-receber-divida" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Registrar Recebimento</h2>
+      <form id="form-receber-divida">
+        <input type="hidden" id="receber-divida-id">
+        <div class="campo">
+          <label for="receber-divida-forma">Forma de pagamento recebida *</label>
+          <select id="receber-divida-forma" required>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="emola">e-Mola</option>
+            <option value="transferencia">Transferência Bancária</option>
+          </select>
+        </div>
+        <div id="modal-receber-divida-erro" class="mensagem-erro"></div>
+        <div class="modal-botoes">
+          <button type="button" id="btn-cancelar-receber-divida" class="btn-secundario-claro">Cancelar</button>
+          <button type="submit" class="btn-primario">Confirmar Recebimento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="servicos.js"></script>
+</body>
+</html>
