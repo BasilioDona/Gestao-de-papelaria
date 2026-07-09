@@ -77,20 +77,38 @@
           </select>
         </div>
 
-        <div class="campo">
-          <label for="produto-preco-compra">Preço de compra (MT) *</label>
-          <input type="number" id="produto-preco-compra" step="0.01" min="0">
+       <div class="campo">
+          <label for="produto-embalagem-nome">Tipo de embalagem de compra</label>
+          <input type="text" id="produto-embalagem-nome" placeholder="Ex: Caixa, Pacote, Resma, Fardo (deixe vazio se não houver)">
         </div>
 
         <div class="campo">
-          <label for="produto-preco-venda">Preço de venda (MT) *</label>
+          <label for="produto-unidades-embalagem">Unidades por embalagem *</label>
+          <input type="number" id="produto-unidades-embalagem" min="1" value="1" required>
+          <span class="dica-campo">Ex: 50 (canetas numa caixa). Deixe 1 se o produto é comprado e vendido na mesma unidade.</span>
+        </div>
+
+        <div class="campo">
+          <label for="produto-preco-compra-embalagem">Custo da embalagem inteira (MT)</label>
+          <input type="number" id="produto-preco-compra-embalagem" step="0.01" min="0">
+          <span class="dica-campo" id="dica-custo-unitario">Custo por unidade: 0.00 MT</span>
+        </div>
+
+        <div class="campo">
+          <label for="produto-unidade-venda">Unidade de venda</label>
+          <input type="text" id="produto-unidade-venda" value="unidade" placeholder="Ex: unidade, folha, litro, kg, metro">
+        </div>
+
+        <div class="campo">
+          <label for="produto-preco-venda">Preço de venda por unidade (MT) *</label>
           <input type="number" id="produto-preco-venda" step="0.01" min="0" required>
         </div>
 
         <div class="campo">
-          <label for="produto-quantidade">Quantidade</label>
+          <label for="produto-quantidade">Quantidade em estoque (em unidades)</label>
           <input type="number" id="produto-quantidade" min="0">
-        </div>
+          <span class="dica-campo">Se está a cadastrar pela primeira vez, informe já convertido em unidades (ex: 2 caixas de 50 = 100).</span>
+        </div> 
 
         <div class="campo">
           <label for="produto-estoque-minimo">Estoque mínimo</label>
