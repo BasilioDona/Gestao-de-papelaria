@@ -37,6 +37,9 @@ const btnExportarPdf = document.getElementById('btn-exportar-pdf');
 let tipoAtivo = 'vendas';
 let ultimoRelatorioGerado = null; // usado pelos relatórios ainda não modernizados (exportação simples)
 let dadosEmpresaRelatorio = null;
+let dadosVendasRelatorio = null;   // guarda os dados para a exportação de vendas em PDF
+let dadosServicosRelatorio = null; // Guarda os dados calculados do relatório de serviços para o PDF
+let dadosClientesRelatorio = null; // Guarda os dados consolidados do relatório de clientes para o PDF
 
 // ===== DATAS PADRÃO: mês atual =====
 const hoje = new Date();
@@ -53,6 +56,9 @@ document.getElementById('filtro-tipo-relatorio').addEventListener('click', (even
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Clique em Gerar para atualizar.</p>';
   resumoRelatorio.innerHTML = '';
   btnExportarPdf.classList.add('escondido');
+  dadosVendasRelatorio = null;
+  dadosServicosRelatorio = null;
+  dadosClientesRelatorio = null;
 });
 
 // ===== BOTÃO GERAR =====
@@ -74,8 +80,8 @@ document.getElementById('btn-gerar-relatorio').addEventListener('click', () => {
     case 'lucro': gerarRelatorioLucro(inicioISO, fimISO); break;
     case 'caixa': gerarRelatorioCaixa(inicioISO, fimISO); break;
     case 'estoque': gerarRelatorioEstoque(); break;
-    case 'clientes': gerarRelatorioClientes(); break;
-    case 'servicos': gerarRelatorioServicos(inicioISO, fimISO); break;
+    case 'clientes': gerarRelatorioClientes(inicioISO, fimISO, dataInicio, dataFim); break;
+    case 'servicos': gerarRelatorioServicos(inicioISO, fimISO, dataInicio, dataFim); break;
     case 'funcionarios': gerarRelatorioFuncionarios(inicioISO, fimISO); break;
   }
 });
@@ -125,7 +131,6 @@ function desenharCabecalhoPDF(doc, tituloRelatorio, periodoTexto, empresa) {
 }
 
 // Escreve o rodapé (data de emissão + "Página X de Y") em TODAS as páginas já geradas.
-// Só pode ser chamado no final, depois que o total de páginas é conhecido.
 function finalizarRodapePDF(doc) {
   const totalPaginas = doc.internal.getNumberOfPages();
   const largura = doc.internal.pageSize.getWidth();
@@ -154,8 +159,6 @@ function formatarMT(valor) {
 // =========================================================
 // 1. RELATÓRIO DE VENDAS — COMPLETO E DETALHADO
 // =========================================================
-let dadosVendasRelatorio = null; // guarda os dados para a exportação em PDF
-
 async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
   resumoRelatorio.innerHTML = '';
@@ -194,7 +197,6 @@ async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
     });
   }
 
-  // ----- Calcula totais gerais e lucro por venda -----
   let valorBruto = 0, totalDescontos = 0, valorLiquido = 0, totalRecebido = 0, totalDivida = 0, lucroTotal = 0, qtdProdutosVendidos = 0;
 
   const vendasProcessadas = vendas.map((v) => {
@@ -216,7 +218,6 @@ async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
     return { venda: v, itens: itensDaVenda, lucro: lucroVenda };
   });
 
-  // ----- Resumo visual (cards) -----
   resumoRelatorio.innerHTML = `
     <div class="card"><span class="card-titulo">Total de vendas</span><span class="card-valor">${vendas.length}</span></div>
     <div class="card"><span class="card-titulo">Produtos vendidos</span><span class="card-valor">${qtdProdutosVendidos}</span></div>
@@ -224,7 +225,6 @@ async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
     <div class="card"><span class="card-titulo">Lucro total</span><span class="card-valor">${formatarMT(lucroTotal)}</span></div>
   `;
 
-  // ----- Detalhe na tela (cards por venda) -----
   conteudoRelatorio.innerHTML = '';
 
   vendasProcessadas.forEach(({ venda: v, itens: itensDaVenda, lucro }) => {
@@ -263,7 +263,6 @@ async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
     conteudoRelatorio.appendChild(div);
   });
 
-  // ----- Totais finais (bloco destacado no fim da tela) -----
   const cardTotais = document.createElement('div');
   cardTotais.className = 'relatorio-card';
   cardTotais.style.background = '#f0f9ff';
@@ -280,16 +279,14 @@ async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
   `;
   conteudoRelatorio.appendChild(cardTotais);
 
-  // Guarda tudo para a exportação em PDF
   dadosVendasRelatorio = {
     vendasProcessadas, valorBruto, totalDescontos, valorLiquido, totalRecebido, totalDivida, lucroTotal, qtdProdutosVendidos,
     periodoTexto: formatarPeriodo(dataInicioStr, dataFimStr)
   };
-  ultimoRelatorioGerado = null; // desativa o exportador genérico para este relatório
+  ultimoRelatorioGerado = null;
   btnExportarPdf.classList.remove('escondido');
 }
 
-// ===== EXPORTAÇÃO EM PDF: VENDAS (usa AutoTable) =====
 async function exportarPdfVendas() {
   const empresa = await carregarDadosEmpresaPDF();
   const { jsPDF } = window.jspdf;
@@ -297,14 +294,12 @@ async function exportarPdfVendas() {
   const d = dadosVendasRelatorio;
 
   desenharCabecalhoPDF(doc, 'Relatório de Vendas', d.periodoTexto, empresa);
-
   let y = 36;
 
-  d.vendasProcessadas.forEach(({ venda: v, itens: itensDaVenda, lucro }, index) => {
+  d.vendasProcessadas.forEach(({ venda: v, itens: itensDaVenda, lucro }) => {
     const nomeCliente = v.clientes ? v.clientes.nome : 'Consumidor Final';
     const nomeFuncionario = v.usuarios ? v.usuarios.nome : '-';
 
-    // Se estamos perto do fim da página, força nova página antes do cabeçalho da venda
     if (y > 260) { doc.addPage(); y = 20; }
 
     doc.setFontSize(9);
@@ -335,13 +330,12 @@ async function exportarPdfVendas() {
       headStyles: { fillColor: [44, 95, 138] },
       footStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: 'bold' },
       margin: { top: 32 },
-      didDrawPage: (dataHook) => desenharCabecalhoPDF(doc, 'Relatório de Vendas', d.periodoTexto, empresa)
+      didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório de Vendas', d.periodoTexto, empresa)
     });
 
     y = doc.lastAutoTable.finalY + 6;
   });
 
-  // ----- Tabela de totais finais -----
   if (y > 250) { doc.addPage(); y = 20; }
 
   doc.autoTable({
@@ -369,11 +363,8 @@ async function exportarPdfVendas() {
 }
 
 // =========================================================
-// RELATÓRIOS AINDA NÃO MODERNIZADOS (fases seguintes)
-// Mantidos como estavam, com exportação genérica
+// 2. PRODUTOS MAIS VENDIDOS
 // =========================================================
-
-// ===== 2. PRODUTOS MAIS VENDIDOS =====
 async function gerarRelatorioMaisVendidos(inicio, fim) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
 
@@ -538,11 +529,11 @@ async function gerarRelatorioCaixa(inicio, fim) {
 
   caixas.forEach((c) => {
     const vInfo = vendasPorCaixa[c.id] || { total: 0, dinheiro: 0, porForma: {} };
-    const sInfo = servicosPorCaixa[c.id] || { total: 0, dinheiro: 0, porForma: {} };
+    const sInfo = servicosPorCaixa[c.id] || { total: 0, dinero: 0, porForma: {} };
     const movInfo = movsPorCaixa[c.id] || { sangria: 0, suprimento: 0 };
     const nomeFuncionario = c.usuarios ? c.usuarios.nome : '-';
 
-    const valorEsperado = Number(c.valor_abertura) + vInfo.dinheiro + sInfo.dinheiro + movInfo.suprimento - movInfo.sangria;
+    const valorEsperado = Number(c.valor_abertura) + (vInfo.dinheiro || 0) + (sInfo.dinheiro || 0) + movInfo.suprimento - movInfo.sangria;
     const temFechamento = c.valor_fechamento !== null;
     const diferenca = temFechamento ? Number(c.valor_fechamento) - valorEsperado : null;
 
@@ -642,34 +633,203 @@ async function gerarRelatorioEstoque() {
   prepararExportacao('Relatório de Estoque', data.map((p) => [p.nome, p.quantidade, p.estoque_minimo]), ['Produto', 'Estoque', 'Mínimo']);
 }
 
-// ===== 6. CLIENTES =====
-async function gerarRelatorioClientes() {
+// =========================================================
+// 6. RELATÓRIO DE CLIENTES — COMPLETO E DETALHADO (MODERNIZADO)
+// =========================================================
+async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
+  resumoRelatorio.innerHTML = '';
+  btnExportarPdf.classList.add('escondido');
 
-  const { data, error } = await supabaseClient
+  // 1. Busca todos os clientes ativos
+  const { data: clientes, error: errC } = await supabaseClient
     .from('clientes')
-    .select('nome, telefone')
+    .select('id, nome, telefone')
     .eq('ativo', true)
     .order('nome');
 
-  if (error) { conteudoRelatorio.innerHTML = '<p class="lista-vazia">Erro: ' + error.message + '</p>'; return; }
+  if (errC) { conteudoRelatorio.innerHTML = '<p class="lista-vazia">Erro: ' + errC.message + '</p>'; return; }
 
-  resumoRelatorio.innerHTML = `<div class="card"><span class="card-titulo">Clientes ativos</span><span class="card-valor">${data.length}</span></div>`;
+  // 2. Busca histórico de Vendas e Serviços no período para cruzar os dados financeiros
+  const [{ data: vendas }, { data: servicos }] = await Promise.all([
+    supabaseClient.from('vendas').select('cliente_id, total, status_pagamento').gte('criado_em', inicio).lte('criado_em', fim).eq('status', 'concluida'),
+    supabaseClient.from('servicos').select('cliente_id, valor, status_pagamento').gte('criado_em', inicio).lte('criado_em', fim).neq('situacao', 'cancelado')
+  ]);
+
+  const mapaFinanceiro = {};
+  let totalGeralConsumido = 0;
+  let totalGeralDivida = 0;
+
+  // Processa dados vindos de Vendas
+  (vendas || []).forEach((v) => {
+    if (!v.cliente_id) return;
+    if (!mapaFinanceiro[v.cliente_id]) {
+      mapaFinanceiro[v.cliente_id] = { qtdVendas: 0, qtdServicos: 0, totalVendas: 0, totalServicos: 0, totalGasto: 0, totalDivida: 0 };
+    }
+    mapaFinanceiro[v.cliente_id].qtdVendas += 1;
+    mapaFinanceiro[v.cliente_id].totalVendas += Number(v.total || 0);
+    mapaFinanceiro[v.cliente_id].totalGasto += Number(v.total || 0);
+    totalGeralConsumido += Number(v.total || 0);
+
+    if (v.status_pagamento === 'pendente') {
+      mapaFinanceiro[v.cliente_id].totalDivida += Number(v.total || 0);
+      totalGeralDivida += Number(v.total || 0);
+    }
+  });
+
+  // Processa dados vindos de Serviços
+  (servicos || []).forEach((s) => {
+    if (!s.cliente_id) return;
+    if (!mapaFinanceiro[s.cliente_id]) {
+      mapaFinanceiro[s.cliente_id] = { qtdVendas: 0, qtdServicos: 0, totalVendas: 0, totalServicos: 0, totalGasto: 0, totalDivida: 0 };
+    }
+    mapaFinanceiro[s.cliente_id].qtdServicos += 1;
+    mapaFinanceiro[s.cliente_id].totalServicos += Number(s.valor || 0);
+    mapaFinanceiro[s.cliente_id].totalGasto += Number(s.valor || 0);
+    totalGeralConsumido += Number(s.valor || 0);
+
+    if (s.status_pagamento === 'pendente') {
+      mapaFinanceiro[s.cliente_id].totalDivida += Number(s.valor || 0);
+      totalGeralDivida += Number(s.valor || 0);
+    }
+  });
+
+  // Consolida e ordena do cliente que mais consumiu para o menor
+  const clientesProcessados = clientes.map((c) => {
+    const fin = mapaFinanceiro[c.id] || { qtdVendas: 0, qtdServicos: 0, totalVendas: 0, totalServicos: 0, totalGasto: 0, totalDivida: 0 };
+    return { ...c, ...fin };
+  }).sort((a, b) => b.totalGasto - a.totalGasto);
+
+  // ----- Resumo Visual por Cards Superiores -----
+  resumoRelatorio.innerHTML = `
+    <div class="card"><span class="card-titulo">Clientes Ativos</span><span class="card-valor">${clientes.length}</span></div>
+    <div class="card"><span class="card-titulo">Faturamento Total</span><span class="card-valor">${formatarMT(totalGeralConsumido)}</span></div>
+    <div class="card"><span class="card-titulo">Total Pendente (Dívidas)</span><span class="card-valor" style="color: #e11d48">${formatarMT(totalGeralDivida)}</span></div>
+  `;
 
   conteudoRelatorio.innerHTML = '';
-  data.forEach((c) => {
+
+  // Renderização individual na tela
+  clientesProcessados.forEach((c) => {
     const div = document.createElement('div');
-    div.className = 'relatorio-linha';
-    div.innerHTML = `<div class="relatorio-linha-titulo">${escapeHTML(c.nome)}</div><span class="relatorio-linha-detalhe">${escapeHTML(c.telefone) || '-'}</span>`;
+    div.className = 'relatorio-card';
+    
+    if (c.totalDivida > 0) {
+      div.style.borderLeft = '5px solid #ef4444';
+      div.style.background = '#fef2f2';
+    }
+
+    div.innerHTML = `
+      <div class="relatorio-card-topo">
+        <div>
+          <div class="relatorio-linha-titulo">${escapeHTML(c.nome)}</div>
+          <div class="relatorio-linha-detalhe">Telefone: ${escapeHTML(c.telefone) || '-'}</div>
+        </div>
+        <strong>${formatarMT(c.totalGasto)}</strong>
+      </div>
+      <div class="relatorio-subitens">
+        <div class="relatorio-subitem"><span>Frequência no período</span><span>${c.qtdVendas} compra(s) • ${c.qtdServicos} serviço(s)</span></div>
+        <div class="relatorio-subitem"><span>Gasto em Compras/Vendas</span><span>${formatarMT(c.totalVendas)}</span></div>
+        <div class="relatorio-subitem"><span>Gasto em Serviços Diretos</span><span>${formatarMT(c.totalServicos)}</span></div>
+        <div class="relatorio-subitem ${c.totalDivida > 0 ? 'relatorio-diferenca-negativa' : ''}" style="margin-top: 4px; padding-top: 4px; border-top: 1px dashed #cbd5e1;">
+          <span>Débito / Fiado Pendente</span>
+          <strong>${formatarMT(c.totalDivida)}</strong>
+        </div>
+      </div>
+    `;
     conteudoRelatorio.appendChild(div);
   });
 
-  prepararExportacao('Relatório de Clientes', data.map((c) => [c.nome, c.telefone || '-']), ['Nome', 'Telefone']);
+  // ----- Bloco de Totais Finais Destacado -----
+  const cardTotais = document.createElement('div');
+  cardTotais.className = 'relatorio-card';
+  cardTotais.style.background = '#f0f9ff';
+  cardTotais.style.border = '1px solid #bae6fd';
+  cardTotais.innerHTML = `
+    <div class="relatorio-linha-titulo" style="margin-bottom:8px;">Balanço Geral de Clientes</div>
+    <div class="relatorio-subitem"><span>Total de Clientes Cadastrados</span><span>${clientes.length}</span></div>
+    <div class="relatorio-subitem"><span>Valor Total Consumido</span><strong>${formatarMT(totalGeralConsumido)}</strong></div>
+    <div class="relatorio-subitem relatorio-diferenca-negativa"><span>Total Geral Retido em Dívidas</span><strong>${formatarMT(totalGeralDivida)}</strong></div>
+  `;
+  conteudoRelatorio.appendChild(cardTotais);
+
+  // Cacheamento estruturado para injeção nativa no AutoTable PDF
+  dadosClientesRelatorio = {
+    clientesProcessados, totalGeralConsumido, totalGeralDivida,
+    periodoTexto: formatarPeriodo(dataInicioStr, dataFimStr)
+  };
+  ultimoRelatorioGerado = null; 
+  btnExportarPdf.classList.remove('escondido');
 }
 
-// ===== 7. SERVIÇOS =====
-async function gerarRelatorioServicos(inicio, fim) {
+// ===== EXPORTAÇÃO EM PDF: CLIENTES (Modernizado via AutoTable) =====
+async function exportarPdfClientes() {
+  const empresa = await carregarDadosEmpresaPDF();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const d = dadosClientesRelatorio;
+
+  desenharCabecalhoPDF(doc, 'Relatório Avançado de Clientes', d.periodoTexto, empresa);
+
+  doc.autoTable({
+    startY: 36,
+    head: [['Nome do Cliente', 'Contacto Telefónico', 'Compras', 'Serviços', 'Total Consumido', 'Dívida Ativa']],
+    body: d.clientesProcessados.map((c) => [
+      c.nome,
+      c.telefone || '-',
+      c.qtdVendas + ' un.',
+      c.qtdServicos + ' un.',
+      formatarMT(c.totalGasto),
+      formatarMT(c.totalDivida)
+    ]),
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [44, 95, 138] },
+    didParseCell: function (dataHook) {
+      if (dataHook.section === 'body') {
+        const itemCliente = d.clientesProcessados[dataHook.row.index];
+        if (itemCliente && itemCliente.totalDivida > 0) {
+          dataHook.cell.styles.textColor = [185, 28, 28]; // vermelho escuro para dívidas
+          if (dataHook.column.index === 5) {
+            dataHook.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Clientes', d.periodoTexto, empresa)
+  });
+
+  let y = doc.lastAutoTable.finalY + 6;
+  if (y > 240) { doc.addPage(); y = 20; }
+
+  // Tabela resumida de rodapé do PDF
+  doc.autoTable({
+    startY: y,
+    head: [['Balanço do Período', '']],
+    body: [
+      ['Total de Clientes Ativos analisados', String(d.clientesProcessados.length)],
+      ['Faturamento Bruto Gerado', formatarMT(d.totalGeralConsumido)],
+      ['Total Retido em Dívidas Pendentes', formatarMT(d.totalGeralDivida)]
+    ],
+    theme: 'grid',
+    styles: { fontSize: 8.5, cellPadding: 2 },
+    headStyles: { fillColor: [30, 58, 95] },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Clientes', d.periodoTexto, empresa)
+  });
+
+  finalizarRodapePDF(doc);
+  doc.save('relatorio_avancado_clientes_' + new Date().toISOString().split('T')[0] + '.pdf');
+}
+
+// =========================================================
+// 7. RELATÓRIO DE SERVIÇOS — COMPLETO E DETALHADO (MODERNIZADO)
+// =========================================================
+async function gerarRelatorioServicos(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
+  resumoRelatorio.innerHTML = '';
+  btnExportarPdf.classList.add('escondido');
 
   let query = supabaseClient
     .from('servicos')
@@ -686,23 +846,29 @@ async function gerarRelatorioServicos(inicio, fim) {
   if (data.length === 0) {
     resumoRelatorio.innerHTML = '';
     conteudoRelatorio.innerHTML = '<p class="lista-vazia">Nenhum serviço no período.</p>';
+    dadosServicosRelatorio = null;
     return;
   }
 
-  const totalValor = data.reduce((t, s) => t + Number(s.valor), 0);
   const naoCancelados = data.filter((s) => s.situacao !== 'cancelado');
-  const cancelados = data.filter((s) => s.situacao === 'cancelado');
+
+  let totalServicosQtd = naoCancelados.length;
+  let valorBruto = naoCancelados.reduce((t, s) => t + Number(s.valor || 0), 0);
+  let totalDividas = naoCancelados.filter((s) => s.status_pagamento === 'pendente').reduce((t, s) => t + Number(s.valor || 0), 0);
+  let totalRecebido = naoCancelados.filter((s) => s.status_pagamento !== 'pendente').reduce((t, s) => t + Number(s.valor || 0), 0);
+  let totalLiquido = valorBruto - totalDividas; 
 
   const porTipo = {};
   naoCancelados.forEach((s) => {
     const nomeTipo = s.tipos_servico ? s.tipos_servico.nome : s.tipo;
-    porTipo[nomeTipo] = (porTipo[nomeTipo] || 0) + Number(s.valor);
+    porTipo[nomeTipo] = (porTipo[nomeTipo] || 0) + Number(s.valor || 0);
   });
 
   resumoRelatorio.innerHTML = `
-    <div class="card"><span class="card-titulo">Serviços</span><span class="card-valor">${data.length}</span></div>
-    <div class="card"><span class="card-titulo">Valor total</span><span class="card-valor">${formatarMT(totalValor)}</span></div>
-    <div class="card"><span class="card-titulo">Cancelados</span><span class="card-valor">${cancelados.length}</span></div>
+    <div class="card"><span class="card-titulo">Total de Serviços</span><span class="card-valor">${totalServicosQtd}</span></div>
+    <div class="card"><span class="card-titulo">Valor Bruto</span><span class="card-valor">${formatarMT(valorBruto)}</span></div>
+    <div class="card"><span class="card-titulo">Total Recebido</span><span class="card-valor">${formatarMT(totalRecebido)}</span></div>
+    <div class="card"><span class="card-titulo">Total em Dívidas</span><span class="card-valor">${formatarMT(totalDividas)}</span></div>
   `;
 
   conteudoRelatorio.innerHTML = '';
@@ -718,38 +884,144 @@ async function gerarRelatorioServicos(inicio, fim) {
   data.forEach((s) => {
     const nomeTipo = s.tipos_servico ? s.tipos_servico.nome : s.tipo;
     const nomeUsuario = s.usuarios ? s.usuarios.nome : '-';
+    const nomeCliente = s.clientes ? s.clientes.nome : 'Sem cliente identificado';
+    const dataHora = new Date(s.criado_em).toLocaleString('pt-BR');
+
+    const estaEmDivida = s.status_pagamento === 'pendente' && s.situacao !== 'cancelado';
+    const statusTexto = s.status_pagamento === 'pendente' ? (s.situacao === 'cancelado' ? 'Cancelado' : 'Dívida') : 'Pago';
+
     const div = document.createElement('div');
     div.className = 'relatorio-card';
+    
+    if (estaEmDivida) {
+      div.style.borderLeft = '5px solid #f97316'; 
+      div.style.background = '#fff7ed'; 
+    }
+
     div.innerHTML = `
       <div class="relatorio-card-topo">
         <div>
           <div class="relatorio-linha-titulo">#${String(s.numero).padStart(4, '0')} - ${escapeHTML(nomeTipo)}</div>
-          <div class="relatorio-linha-detalhe">
-            ${escapeHTML(nomeUsuario)} • ${new Date(s.criado_em).toLocaleString('pt-BR')}
-            ${s.clientes ? '• Cliente: ' + escapeHTML(s.clientes.nome) : ''}
-          </div>
+          <div class="relatorio-linha-detalhe">Data/Hora: ${dataHora} • Funcionário: ${escapeHTML(nomeUsuario)}</div>
+          <div class="relatorio-linha-detalhe">Cliente: ${escapeHTML(nomeCliente)}</div>
         </div>
-        <span class="situacao-tag ${s.situacao}">${s.situacao}</span>
+        <strong>${formatarMT(s.valor)}</strong>
       </div>
       <div class="relatorio-subitens">
+        <div class="relatorio-subitem"><span>Forma de pagamento</span><span>${NOMES_PAGAMENTO_REL[s.forma_pagamento] || s.forma_pagamento || '-'}</span></div>
+        <div class="relatorio-subitem"><span>Situação do serviço</span><span><span class="situacao-tag ${s.situacao}">${s.situacao}</span></span></div>
+        <div class="relatorio-subitem ${estaEmDivida ? 'relatorio-diferenca-negativa' : ''}">
+          <span>Status do pagamento</span>
+          <strong>${statusTexto}</strong>
+        </div>
         ${s.cor ? `<div class="relatorio-subitem"><span>Cor</span><span>${NOMES_COR_REL[s.cor] || s.cor}</span></div>` : ''}
         ${s.paginas ? `<div class="relatorio-subitem"><span>Páginas</span><span>${s.paginas}</span></div>` : ''}
         ${s.descricao ? `<div class="relatorio-subitem"><span>Descrição</span><span>${escapeHTML(s.descricao)}</span></div>` : ''}
-        ${s.forma_pagamento ? `<div class="relatorio-subitem"><span>Forma de pagamento</span><span>${NOMES_PAGAMENTO_REL[s.forma_pagamento] || s.forma_pagamento}</span></div>` : ''}
-        <div class="relatorio-subitem" style="font-weight:700;"><span>Valor</span><span>${formatarMT(s.valor)}</span></div>
       </div>
     `;
     conteudoRelatorio.appendChild(div);
   });
 
-  prepararExportacao('Relatório Detalhado de Serviços', data.map((s) => [
-    '#' + String(s.numero).padStart(4, '0'),
-    s.tipos_servico ? s.tipos_servico.nome : s.tipo,
-    s.paginas || '-',
-    s.situacao,
-    s.forma_pagamento ? (NOMES_PAGAMENTO_REL[s.forma_pagamento] || s.forma_pagamento) : '-',
-    formatarMT(s.valor)
-  ]), ['Nº', 'Tipo', 'Páginas', 'Situação', 'Pagamento', 'Valor']);
+  const cardTotais = document.createElement('div');
+  cardTotais.className = 'relatorio-card';
+  cardTotais.style.background = '#f0f9ff';
+  cardTotais.style.border = '1px solid #bae6fd';
+  cardTotais.innerHTML = `
+    <div class="relatorio-linha-titulo" style="margin-bottom:12px; font-size:14px;">Resumo Financeiro dos Serviços</div>
+    <div class="relatorio-subitem"><span>Total de Serviços:</span><strong>${totalServicosQtd}</strong></div>
+    <div class="relatorio-subitem"><span>Valor Bruto:</span><span>${formatarMT(valorBruto)}</span></div>
+    <div class="relatorio-subitem"><span>Total Recebido:</span><span>${formatarMT(totalRecebido)}</span></div>
+    <div class="relatorio-subitem relatorio-diferenca-negativa"><span>Total em Dívidas:</span><span>${formatarMT(totalDividas)}</span></div>
+    <div class="relatorio-subitem" style="font-weight:700; margin-top:8px; border-top:1px dashed #bae6fd; padding-top:8px; font-size:13px;">
+      <span>Total Líquido do Dia:</span><span>${formatarMT(totalLiquido)}</span>
+    </div>
+  `;
+  conteudoRelatorio.appendChild(cardTotais);
+
+  dadosServicosRelatorio = {
+    servicos: data, totalServicosQtd, valorBruto, totalRecebido, totalDividas, totalLiquido,
+    periodoTexto: formatarPeriodo(dataInicioStr, dataFimStr)
+  };
+
+  ultimoRelatorioGerado = null;
+  btnExportarPdf.classList.remove('escondido');
+}
+
+async function exportarPdfServicos() {
+  const empresa = await carregarDadosEmpresaPDF();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const d = dadosServicosRelatorio;
+
+  desenharCabecalhoPDF(doc, 'Relatório de Serviços', d.periodoTexto, empresa);
+  let y = 36;
+
+  doc.autoTable({
+    startY: y,
+    head: [['Nº', 'Data e Hora', 'Tipo de Serviço', 'Cliente', 'Funcionário', 'Forma de Pagamento', 'Status', 'Valor']],
+    body: d.servicos.map((s) => {
+      const nomeTipo = s.tipos_servico ? s.tipos_servico.nome : s.tipo;
+      const nomeUsuario = s.usuarios ? s.usuarios.nome : '-';
+      const nomeCliente = s.clientes ? s.clientes.nome : 'Sem cliente';
+      const dataHora = new Date(s.criado_em).toLocaleString('pt-BR');
+      const statusTexto = s.status_pagamento === 'pendente' ? (s.situacao === 'cancelado' ? 'Cancelado' : 'Dívida') : 'Pago';
+      return [
+        '#' + String(s.numero).padStart(4, '0'),
+        dataHora,
+        nomeTipo,
+        nomeCliente,
+        nomeUsuario,
+        NOMES_PAGAMENTO_REL[s.forma_pagamento] || s.forma_pagamento || '-',
+        statusTexto,
+        formatarMT(s.valor)
+      ];
+    }),
+    theme: 'grid',
+    styles: { fontSize: 7, cellPadding: 1.5 },
+    headStyles: { fillColor: [44, 95, 138] },
+    didParseCell: function (dataHook) {
+      if (dataHook.section === 'body') {
+        const itemServico = d.servicos[dataHook.row.index];
+        if (itemServico && itemServico.status_pagamento === 'pendente' && itemServico.situacao !== 'cancelado') {
+          dataHook.cell.styles.textColor = [194, 65, 12];
+          if (dataHook.column.index === 6) {
+            dataHook.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório de Serviços', d.periodoTexto, empresa)
+  });
+
+  y = doc.lastAutoTable.finalY + 6;
+  if (y > 240) { doc.addPage(); y = 20; }
+
+  doc.autoTable({
+    startY: y,
+    head: [['Resumo Financeiro dos Serviços', '']],
+    body: [
+      ['Total de Serviços realizados', String(d.totalServicosQtd)],
+      ['Valor Bruto', formatarMT(d.valorBruto)],
+      ['Total Recebido', formatarMT(d.totalRecebido)],
+      ['Total em Dívidas', formatarMT(d.totalDividas)],
+      ['Total Líquido do Dia', formatarMT(d.totalLiquido)]
+    ],
+    theme: 'grid',
+    styles: { fontSize: 8.5, cellPadding: 2 },
+    headStyles: { fillColor: [30, 58, 95] },
+    didParseCell: function (dataHook) {
+      if (dataHook.section === 'body' && dataHook.row.index === 4) {
+        dataHook.cell.styles.fontStyle = 'bold';
+        dataHook.cell.styles.fillColor = [241, 245, 249];
+      }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório de Serviços', d.periodoTexto, empresa)
+  });
+
+  finalizarRodapePDF(doc);
+  doc.save('relatorio_servicos_' + new Date().toISOString().split('T')[0] + '.pdf');
 }
 
 // ===== 8. FUNCIONÁRIOS (desempenho — só admin) =====
@@ -812,8 +1084,8 @@ async function gerarRelatorioFuncionarios(inicio, fim) {
 }
 
 // ===== PREPARA DADOS PARA EXPORTAÇÃO SIMPLES (relatórios ainda não modernizados) =====
-function prepararExportacao(titulo, linhas, colunas) {
-  ultimoRelatorioGerado = { titulo, linhas, colunas };
+function prepararExportacao(titulo, lines, colunas) {
+  ultimoRelatorioGerado = { titulo, linhas: lines, colunas };
   btnExportarPdf.classList.remove('escondido');
 }
 
@@ -824,10 +1096,18 @@ btnExportarPdf.addEventListener('click', async () => {
     return;
   }
 
+  if (tipoAtivo === 'servicos' && dadosServicosRelatorio) {
+    await exportarPdfServicos();
+    return;
+  }
+
+  if (tipoAtivo === 'clientes' && dadosClientesRelatorio) {
+    await exportarPdfClientes();
+    return;
+  }
+
   if (!ultimoRelatorioGerado) return;
 
-  // Exportador genérico (relatórios ainda não modernizados) — agora também com
-  // cabeçalho/rodapé/paginação padrão, via AutoTable
   const empresa = await carregarDadosEmpresaPDF();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
