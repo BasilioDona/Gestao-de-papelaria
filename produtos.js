@@ -30,7 +30,10 @@ const modalProduto = document.getElementById('modal-produto');
 const formProduto = document.getElementById('form-produto');
 const modalTitulo = document.getElementById('modal-titulo');
 const modalMensagemErro = document.getElementById('modal-mensagem-erro');
-const selectCategoria = document.getElementById('produto-categoria');
+const selectCategoria = document.getElementById('produto-categoria'); const campoEmbalagemNome = document.getElementById('produto-embalagem-nome'); const campoUnidadesEmbalagem = document.getElementById('produto-unidades-embalagem'); const campoPrecoCompraEmbalagem = document.getElementById('produto-preco-compra-embalagem'); const campoUnidadeVenda = document.getElementById('produto-unidade-venda'); const dicaCustoUnitario = document.getElementById('dica-custo-unitario'); 
+
+// ===== CALCULA E MOSTRA O CUSTO POR UNIDADE EM TEMPO REAL (apenas visual) =====
+function atualizarDicaCustoUnitario() {   const custoEmbalagem = parseFloat(campoPrecoCompraEmbalagem.value) || 0;   const unidades = parseInt(campoUnidadesEmbalagem.value) || 1;   const custoUnitario = unidades > 0 ? custoEmbalagem / unidades : 0;   dicaCustoUnitario.textContent = 'Custo por unidade: ' + custoUnitario.toFixed(2) + ' MT'; }  campoPrecoCompraEmbalagem.addEventListener('input', atualizarDicaCustoUnitario); campoUnidadesEmbalagem.addEventListener('input', atualizarDicaCustoUnitario);
 
 let produtosCache = []; // guarda os produtos carregados, para filtrar sem nova consulta
 
@@ -138,6 +141,9 @@ campoBusca.addEventListener('input', () => {
 document.getElementById('btn-novo-produto').addEventListener('click', () => {
   formProduto.reset();
   document.getElementById('produto-id').value = '';
+  campoUnidadesEmbalagem.value = 1;
+  campoUnidadeVenda.value = 'unidade';
+  atualizarDicaCustoUnitario();
   modalTitulo.textContent = 'Novo Produto';
   modalMensagemErro.textContent = '';
   modalProduto.classList.remove('escondido');
@@ -153,12 +159,16 @@ function abrirModalEdicao(id) {
   document.getElementById('produto-codigo-barras').value = produto.codigo_barras || '';
   document.getElementById('produto-nome').value = produto.nome;
   document.getElementById('produto-categoria').value = produto.categoria_id || '';
-  document.getElementById('produto-preco-compra').value = produto.preco_compra;
+  campoEmbalagemNome.value = produto.embalagem_nome || '';
+  campoUnidadesEmbalagem.value = produto.unidades_por_embalagem || 1;
+  campoPrecoCompraEmbalagem.value = produto.preco_compra_embalagem || produto.preco_compra || '';
+  campoUnidadeVenda.value = produto.unidade_venda || 'unidade';
   document.getElementById('produto-preco-venda').value = produto.preco_venda;
   document.getElementById('produto-quantidade').value = produto.quantidade;
   document.getElementById('produto-estoque-minimo').value = produto.estoque_minimo;
   document.getElementById('produto-fornecedor').value = produto.fornecedor || '';
 
+  atualizarDicaCustoUnitario();
   modalTitulo.textContent = 'Editar Produto';
   modalMensagemErro.textContent = '';
   modalProduto.classList.remove('escondido');
@@ -181,7 +191,10 @@ formProduto.addEventListener('submit', async (event) => {
     codigo_barras: document.getElementById('produto-codigo-barras').value.trim() || null,
     nome: document.getElementById('produto-nome').value.trim(),
     categoria_id: document.getElementById('produto-categoria').value || null,
-    preco_compra: parseFloat(document.getElementById('produto-preco-compra').value) || 0,
+    embalagem_nome: campoEmbalagemNome.value.trim() || null,
+    unidades_por_embalagem: parseInt(campoUnidadesEmbalagem.value) || 1,
+    preco_compra_embalagem: parseFloat(campoPrecoCompraEmbalagem.value) || 0,
+    unidade_venda: campoUnidadeVenda.value.trim() || 'unidade',
     preco_venda: parseFloat(document.getElementById('produto-preco-venda').value),
     quantidade: parseInt(document.getElementById('produto-quantidade').value) || 0,
     estoque_minimo: parseInt(document.getElementById('produto-estoque-minimo').value) || 0,
