@@ -13,7 +13,6 @@ document.getElementById('tipo-usuario').textContent = usuarioLogado.tipo;
 if (!ehAdmin) {
   document.getElementById('link-usuarios').style.display = 'none';
   document.getElementById('link-config').style.display = 'none';
-  // Funcionário só consulta, não registra movimentação
   document.getElementById('btn-nova-movimentacao').style.display = 'none';
 }
 
@@ -25,6 +24,10 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
 
 // ===== ELEMENTOS =====
 const listaMovimentacoes = document.getElementById('lista-movimentacoes');
+const blocoTipoRegistro = document.getElementById('bloco-tipo-registro-estoque');
+const selectTipoRegistro = document.getElementById('mov-tipo-registro');
+const blocoPreviewConversao = document.getElementById('bloco-preview-conversao');
+const dicaConversaoEmbalagem = document.getElementById('dica-conversao-embalagem');
 const campoBusca = document.getElementById('busca-movimentacao');
 const modalMovimentacao = document.getElementById('modal-movimentacao');
 const formMovimentacao = document.getElementById('form-movimentacao');
@@ -33,6 +36,7 @@ const selectProduto = document.getElementById('mov-produto');
 const selectTipo = document.getElementById('mov-tipo');
 const labelQuantidade = document.getElementById('label-mov-quantidade');
 const dicaQuantidade = document.getElementById('dica-mov-quantidade');
+const campoQuantidade = document.getElementById('mov-quantidade');
 
 let movimentacoesCache = [];
 let produtosParaSelect = [];
@@ -41,7 +45,7 @@ let produtosParaSelect = [];
 async function carregarProdutosSelect() {
   const { data, error } = await supabaseClient
     .from('produtos')
-    .select('id, nome, codigo, quantidade')
+    .select('id, nome, codigo, quantidade, unidades_por_embalagem, embalagem_nome')
     .eq('ativo', true)
     .order('nome');
 
@@ -66,17 +70,55 @@ selectTipo.addEventListener('change', () => {
   if (tipo === 'entrada') {
     labelQuantidade.textContent = 'Quantidade que entrou *';
     dicaQuantidade.textContent = 'Será somada ao estoque atual.';
+    blocoTipoRegistro.classList.remove('escondido');
   } else if (tipo === 'saida') {
     labelQuantidade.textContent = 'Quantidade que saiu *';
     dicaQuantidade.textContent = 'Será subtraída do estoque atual.';
+    blocoTipoRegistro.classList.add('escondido');
+    blocoPreviewConversao.classList.add('escondido');
   } else if (tipo === 'ajuste' || tipo === 'inventario') {
     labelQuantidade.textContent = 'Quantidade final (contada) *';
-    dicaQuantidade.textContent = 'Substitui o estoque atual por este valor.';
+    dicaQuantidade.textContent = 'Substitui o estoque atual por este valor (sempre em unidades).';
+    blocoTipoRegistro.classList.add('escondido');
+    blocoPreviewConversao.classList.add('escondido');
   } else {
     labelQuantidade.textContent = 'Quantidade *';
     dicaQuantidade.textContent = '';
+    blocoTipoRegistro.classList.add('escondido');
+    blocoPreviewConversao.classList.add('escondido');
   }
+  atualizarPreviewConversao();
 });
+
+// ===== MOSTRA A CONVERSÃO EMBALAGEM → UNIDADES EM TEMPO REAL =====
+function atualizarPreviewConversao() {
+  if (selectTipo.value !== 'entrada' || selectTipoRegistro.value !== 'embalagem') {
+    blocoPreviewConversao.classList.add('escondido');
+    return;
+  }
+
+  const produtoId = selectProduto.value;
+  const produto = produtosParaSelect.find((p) => p.id === produtoId);
+  const quantidadeEmbalagens = parseInt(campoQuantidade.value) || 0;
+
+  if (!produto) {
+    dicaConversaoEmbalagem.textContent = 'Selecione um produto para ver a conversão.';
+    blocoPreviewConversao.classList.remove('escondido');
+    return;
+  }
+
+  const unidadesPorEmbalagem = produto.unidades_por_embalagem || 1;
+  const totalUnidades = quantidadeEmbalagens * unidadesPorEmbalagem;
+  const nomeEmbalagem = produto.embalagem_nome || 'embalagem';
+
+  dicaConversaoEmbalagem.textContent =
+    `${quantidadeEmbalagens} ${nomeEmbalagem}(s) × ${unidadesPorEmbalagem} un. = ${totalUnidades} unidades serão adicionadas ao estoque.`;
+  blocoPreviewConversao.classList.remove('escondido');
+}
+
+selectTipoRegistro.addEventListener('change', atualizarPreviewConversao);
+selectProduto.addEventListener('change', atualizarPreviewConversao);
+campoQuantidade.addEventListener('input', atualizarPreviewConversao);
 
 // ===== CARREGAR HISTÓRICO =====
 async function carregarMovimentacoes() {
@@ -116,10 +158,10 @@ function renderizarMovimentacoes(lista) {
     div.className = 'mov-item';
     div.innerHTML = `
       <div class="mov-info">
-        <div class="mov-produto">${nomeProduto}</div>
+        <div class="mov-produto">${escapeHTML(nomeProduto)}</div>
         <div class="mov-detalhes">
-          ${mov.quantidade_anterior} → ${mov.quantidade_nova} • ${nomeUsuario} • ${dataFormatada}
-          ${mov.motivo ? '• ' + mov.motivo : ''}
+          ${mov.quantidade_anterior} → ${mov.quantidade_nova} • ${escapeHTML(nomeUsuario)} • ${dataFormatada}
+          ${mov.motivo ? '• ' + escapeHTML(mov.motivo) : ''}
         </div>
       </div>
       <span class="mov-tag ${mov.tipo}">${mov.tipo}</span>
@@ -143,6 +185,8 @@ campoBusca.addEventListener('input', () => {
 document.getElementById('btn-nova-movimentacao').addEventListener('click', () => {
   formMovimentacao.reset();
   dicaQuantidade.textContent = '';
+  blocoTipoRegistro.classList.add('escondido');
+  blocoPreviewConversao.classList.add('escondido');
   modalMensagemErro.textContent = '';
   modalMovimentacao.classList.remove('escondido');
 });
@@ -158,10 +202,17 @@ formMovimentacao.addEventListener('submit', async (event) => {
 
   const produtoId = selectProduto.value;
   const tipo = selectTipo.value;
-  const quantidade = parseInt(document.getElementById('mov-quantidade').value);
+  let quantidade = parseInt(document.getElementById('mov-quantidade').value);
   const motivo = document.getElementById('mov-motivo').value.trim() || null;
 
-  // Chama a função do banco (é ela que faz tudo de forma atômica)
+  // Converte embalagens para unidades antes de enviar ao banco —
+  // a tabela de movimentações sempre registra em unidades individuais
+  if (tipo === 'entrada' && selectTipoRegistro.value === 'embalagem') {
+    const produto = produtosParaSelect.find((p) => p.id === produtoId);
+    const unidadesPorEmbalagem = produto ? (produto.unidades_por_embalagem || 1) : 1;
+    quantidade = quantidade * unidadesPorEmbalagem;
+  }
+
   const { error } = await supabaseClient.rpc('registrar_movimentacao_estoque', {
     p_produto_id: produtoId,
     p_tipo: tipo,
@@ -176,7 +227,6 @@ formMovimentacao.addEventListener('submit', async (event) => {
 
   modalMovimentacao.classList.add('escondido');
   carregarMovimentacoes();
-  // Recarrega os produtos no select, pois o estoque mudou
   selectProduto.innerHTML = '<option value="">Selecione...</option>';
   carregarProdutosSelect();
 });
