@@ -165,29 +165,37 @@ async function carregarClientesSelect() {
   });
 }
 
-// ===== TIPO MUDOU: mostra/esconde cor e páginas =====
+// ===== TIPO MUDOU: decide entre preço por página ou preço fixo =====
 selectTipo.addEventListener('change', () => {
   const tipoSelecionado = selectTipo.value;
   const precosDoTipo = precosServicoCache.filter((p) => p.tipo === tipoSelecionado);
 
-  if (precosDoTipo.length === 0) {
-    blocoCor.classList.add('escondido');
-    blocoPaginas.classList.add('escondido');
+  // Caso 1: tipo tem preço por página cadastrado (impressão, fotocópia, etc.)
+  if (precosDoTipo.length > 0) {
+    blocoPaginas.classList.remove('escondido');
+    blocoCor.classList.remove('escondido');
+
+    selectCor.innerHTML = '<option value="">Selecione...</option>';
+    precosDoTipo.forEach((p) => {
+      const nomesCor = { pb: 'Preto e branco', colorido: 'Colorido', unica: 'Padrão' };
+      const option = document.createElement('option');
+      option.value = p.cor;
+      option.textContent = nomesCor[p.cor] || p.cor;
+      selectCor.appendChild(option);
+    });
+
+    calcularValorAutomatico();
     return;
   }
 
-  selectCor.innerHTML = '<option value="">Selecione...</option>';
-  precosDoTipo.forEach((p) => {
-    const nomesCor = { pb: 'Preto e branco', colorido: 'Colorido', unica: 'Padrão' };
-    const option = document.createElement('option');
-    option.value = p.cor;
-    option.textContent = nomesCor[p.cor] || p.cor;
-    selectCor.appendChild(option);
-  });
+  // Caso 2: preço fixo (todos os demais serviços, incluindo Encadernação)
+  blocoCor.classList.add('escondido');
+  blocoPaginas.classList.add('escondido');
 
-  blocoCor.classList.remove('escondido');
-  blocoPaginas.classList.remove('escondido');
-  calcularValorAutomatico();
+  const tipoInfo = tiposServicoCache.find((t) => t.chave === tipoSelecionado);
+  if (tipoInfo && tipoInfo.preco_padrao !== null && tipoInfo.preco_padrao !== undefined) {
+    campoValor.value = Number(tipoInfo.preco_padrao).toFixed(2);
+  }
 });
 
 function calcularValorAutomatico() {
@@ -302,7 +310,7 @@ function renderizarServicos() {
     btn.addEventListener('click', () => reimprimirServico(btn.dataset.id));
   });
 
-document.querySelectorAll('.marcar-pago-servico').forEach((btn) => {
+  document.querySelectorAll('.marcar-pago-servico').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.getElementById('receber-divida-id').value = btn.dataset.id;
       document.getElementById('modal-receber-divida-erro').textContent = '';
@@ -311,7 +319,7 @@ document.querySelectorAll('.marcar-pago-servico').forEach((btn) => {
   });
 }
 
-// ===== MODAL: RECEBER PAGAMENTO DE DÍVIDA (serviço) =====
+// ===== MODAL: RECEBER PAGAMENTO DE DÍVIDA =====
 document.getElementById('btn-cancelar-receber-divida').addEventListener('click', () => {
   document.getElementById('modal-receber-divida').classList.add('escondido');
 });
