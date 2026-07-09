@@ -72,10 +72,22 @@
           </select>
         </div>
 
+        <div class="campo escondido" id="bloco-tipo-registro-estoque">
+          <label>Como deseja registrar?</label>
+          <select id="mov-tipo-registro">
+            <option value="unidade">Em unidades</option>
+            <option value="embalagem">Em embalagens (ex: caixas)</option>
+          </select>
+        </div>
+
         <div class="campo">
           <label for="mov-quantidade" id="label-mov-quantidade">Quantidade *</label>
           <input type="number" id="mov-quantidade" min="0" required>
           <span id="dica-mov-quantidade" class="dica-campo"></span>
+        </div>
+
+        <div class="campo escondido" id="bloco-preview-conversao">
+          <span class="dica-campo" id="dica-conversao-embalagem"></span>
         </div>
 
         <div class="campo">
