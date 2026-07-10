@@ -32,15 +32,142 @@
     </nav>
 
     <main class="conteudo">
-      <div class="cabecalho-pagina">
-        <h1>Serviços</h1>
-        <button id="btn-novo-servico" class="btn-primario">+ Novo Serviço</button>
-      </div>
+      <h1>Serviços</h1>
 
       <div id="aviso-sem-caixa" class="card-caixa escondido">
         <p class="lista-vazia">Você precisa abrir o caixa antes de registrar serviços.</p>
         <a href="caixa.html" class="btn-primario" style="display:inline-block; text-align:center; text-decoration:none;">Ir para o Caixa</a>
       </div>
+
+      <!-- ===== ÁREA DE NOVO PEDIDO ===== -->
+      <div id="area-novo-pedido" class="escondido">
+
+        <!-- BOTÕES RÁPIDOS: serviços favoritos, um toque adiciona -->
+        <h2 style="margin-top:0;">Toque para adicionar</h2>
+        <div class="servicos-rapidos-grid" id="grid-servicos-rapidos">
+          <!-- preenchido via JS -->
+        </div>
+
+        <!-- PAINEL DE ITEM: só aparece quando um serviço com opções é escolhido -->
+        <div class="painel-item-servico escondido" id="painel-item-servico">
+          <div class="painel-item-titulo">
+            <strong id="painel-item-nome">Serviço</strong>
+            <button type="button" class="btn-fechar-painel" id="btn-fechar-painel-item">✕</button>
+          </div>
+
+          <!-- Cor: só aparece se o serviço tiver preço por página -->
+          <div class="escondido" id="painel-bloco-cor">
+            <label class="dica-campo" style="font-weight:600; color:#334155;">Cor</label>
+            <div class="chips-cor">
+              <button type="button" class="chip-cor" data-cor="pb">Preto e Branco</button>
+              <button type="button" class="chip-cor" data-cor="colorido">Colorido</button>
+            </div>
+          </div>
+
+          <!-- Quantidade: sempre aparece, com chips de valores comuns -->
+          <div style="margin-top:12px;">
+            <label class="dica-campo" style="font-weight:600; color:#334155;" id="painel-label-quantidade">Quantidade</label>
+            <div class="chips-quantidade" id="chips-quantidade-rapida">
+              <button type="button" class="chip-qtd" data-qtd="1">1</button>
+              <button type="button" class="chip-qtd" data-qtd="5">5</button>
+              <button type="button" class="chip-qtd" data-qtd="10">10</button>
+              <button type="button" class="chip-qtd" data-qtd="20">20</button>
+              <button type="button" class="chip-qtd" data-qtd="50">50</button>
+            </div>
+            <input type="number" id="painel-quantidade" min="1" value="1" style="margin-top:8px;">
+          </div>
+
+          <!-- Nota opcional, escondida por padrão para não poluir -->
+          <div style="margin-top:10px;">
+            <button type="button" class="chip-descricao" id="btn-mostrar-nota">+ Adicionar nota</button>
+            <div class="escondido" id="painel-bloco-nota" style="margin-top:8px;">
+              <input type="text" id="painel-descricao" placeholder="Ex: documento frente e verso">
+            </div>
+          </div>
+
+          <!-- Preço unitário: visível mas raramente precisa ser tocado (já vem preenchido) -->
+          <div style="margin-top:12px;">
+            <label class="dica-campo" style="font-weight:600; color:#334155;">Preço unitário (MT)</label>
+            <input type="number" id="painel-preco-unitario" step="0.01" min="0">
+          </div>
+
+          <div class="pdv-totais">
+            <div><span>Subtotal:</span> <strong id="painel-subtotal-preview">0,00 MT</strong></div>
+          </div>
+
+          <div id="painel-mensagem-erro" class="mensagem-erro"></div>
+
+          <button type="button" id="btn-confirmar-item" class="btn-primario">Adicionar ao Pedido</button>
+        </div>
+
+        <!-- CARRINHO -->
+        <div id="carrinho-servicos" class="tabela-container" style="margin-top:16px;">
+          <p class="lista-vazia">Nenhum item adicionado ainda. Toque num serviço acima.</p>
+        </div>
+
+        <!-- BARRA COMPACTA DE TOTAL (sticky), toca para abrir o checkout -->
+        <div class="resumo-pedido-compacto escondido" id="resumo-compacto">
+          <div>
+            <div class="total-label" id="resumo-compacto-itens">0 itens</div>
+            <div class="total-valor" id="resumo-compacto-total">0,00 MT</div>
+          </div>
+          <span>Finalizar →</span>
+        </div>
+
+        <!-- CHECKOUT: cliente, desconto, pagamento (aparece ao tocar na barra compacta) -->
+        <div class="card-caixa escondido" id="painel-checkout" style="margin-top:12px;">
+          <h2 style="margin-top:0;">Finalizar Pedido</h2>
+
+          <div class="campo busca-cliente-container">
+            <label for="busca-cliente-pedido">Cliente (opcional)</label>
+            <input type="text" id="busca-cliente-pedido" placeholder="Digite o nome para buscar...">
+            <div class="busca-cliente-resultados escondido" id="resultados-busca-cliente"></div>
+            <div id="cliente-selecionado-area"></div>
+          </div>
+
+          <div class="campo">
+            <label for="pedido-desconto">Desconto (MT)</label>
+            <input type="number" id="pedido-desconto" step="0.01" min="0" value="0">
+          </div>
+
+          <div class="campo">
+            <label>Forma de pagamento *</label>
+            <div class="chips-cor" id="chips-forma-pagamento"><!-- preenchido via JS --></div>
+            <input type="hidden" id="pedido-pagamento" required>
+          </div>
+
+          <div class="campo escondido" id="bloco-vencimento-pedido">
+            <label for="pedido-vencimento">Data de vencimento *</label>
+            <input type="date" id="pedido-vencimento">
+          </div>
+
+          <div class="pdv-totais">
+            <div><span>Subtotal:</span> <strong id="pedido-subtotal">0,00 MT</strong></div>
+            <div><span>Desconto:</span> <strong id="pedido-desconto-exibido">0,00 MT</strong></div>
+            <div class="pdv-total-final"><span>Total:</span> <strong id="pedido-total">0,00 MT</strong></div>
+          </div>
+
+          <!-- Pagamento rápido: 1 toque, dinheiro exato, sem digitar nada -->
+          <button type="button" id="btn-pagamento-rapido-dinheiro" class="btn-pagamento-rapido">💵 Recebi o valor exato em Dinheiro</button>
+
+          <div class="campo" style="margin-top:12px;">
+            <label for="pedido-valor-recebido">Ou informe o valor recebido (MT)</label>
+            <input type="number" id="pedido-valor-recebido" step="0.01" min="0" placeholder="Ex: 100">
+          </div>
+
+          <div class="pdv-totais">
+            <div><span>Troco:</span> <strong id="pedido-troco">0,00 MT</strong></div>
+          </div>
+
+          <div id="pedido-mensagem-erro" class="mensagem-erro"></div>
+
+          <button type="button" id="btn-finalizar-pedido" class="btn-primario">Confirmar e Finalizar</button>
+          <button type="button" id="btn-cancelar-checkout" class="btn-secundario-claro" style="margin-top:8px;">Voltar</button>
+        </div>
+      </div>
+
+      <!-- ===== ACOMPANHAMENTO ===== -->
+      <h2 style="margin-top:32px;">Acompanhamento de Serviços</h2>
 
       <div class="filtro-abas" id="filtro-situacao">
         <button class="aba ativa" data-situacao="todos">Todos</button>
@@ -51,6 +178,10 @@
         <button class="aba" data-situacao="cancelado">Cancelado</button>
       </div>
 
+      <div class="campo-busca">
+        <input type="text" id="busca-servico" placeholder="Buscar por pedido, tipo ou cliente...">
+      </div>
+
       <div id="lista-servicos" class="tabela-container">
         <p class="lista-vazia">Carregando serviços...</p>
       </div>
@@ -58,73 +189,17 @@
 
   </div>
 
-  <!-- MODAL DE CADASTRO -->
-  <div id="modal-servico" class="modal-overlay escondido">
+  <!-- MODAL: TODOS OS SERVIÇOS (quando não é favorito) -->
+  <div id="modal-todos-servicos" class="modal-overlay escondido">
     <div class="modal-box">
-      <h2>Novo Serviço</h2>
-      <form id="form-servico">
-
-        <div class="campo">
-          <label for="servico-tipo">Tipo *</label>
-          <select id="servico-tipo" required>
-            <option value="">Selecione...</option>
-          </select>
-        </div>
-
-        <div class="campo escondido" id="bloco-cor">
-          <label for="servico-cor">Cor *</label>
-          <select id="servico-cor">
-            <option value="">Selecione...</option>
-          </select>
-        </div>
-
-        <div class="campo escondido" id="bloco-paginas">
-          <label for="servico-paginas">Número de páginas</label>
-          <input type="number" id="servico-paginas" min="1">
-          <span class="dica-campo">O valor abaixo será calculado automaticamente, mas pode ser ajustado.</span>
-        </div>
-
-        <div class="campo">
-          <label for="servico-cliente">Cliente</label>
-          <select id="servico-cliente">
-            <option value="">Sem cliente identificado</option>
-          </select>
-        </div>
-
-        <div class="campo">
-          <label for="servico-descricao">Descrição</label>
-          <input type="text" id="servico-descricao" placeholder="Ex: 50 cópias frente e verso">
-        </div>
-
-        <div class="campo">
-          <label for="servico-valor">Valor (MT) *</label>
-          <input type="number" id="servico-valor" step="0.01" min="0" required>
-        </div>
-
-        <div class="campo">
-          <label for="servico-pagamento">Forma de pagamento *</label>
-          <select id="servico-pagamento" required></select>
-        </div>
-
-        <div class="campo escondido" id="bloco-vencimento-servico">
-          <label for="servico-vencimento">Data de vencimento *</label>
-          <input type="date" id="servico-vencimento">
-          <span class="dica-campo">Prazo para o cliente pagar esta dívida.</span>
-        </div>
-
-        <div class="campo">
-          <label for="servico-valor-recebido">Valor recebido (MT)</label>
-          <input type="number" id="servico-valor-recebido" step="0.01" min="0" placeholder="Ex: 50">
-          <span class="dica-campo" id="servico-troco-dica"></span>
-        </div>
-
-        <div id="modal-mensagem-erro" class="mensagem-erro"></div>
-
-        <div class="modal-botoes">
-          <button type="button" id="btn-cancelar-modal" class="btn-secundario-claro">Cancelar</button>
-          <button type="submit" class="btn-primario">Registrar</button>
-        </div>
-      </form>
+      <h2>Todos os Serviços</h2>
+      <div class="campo-busca">
+        <input type="text" id="busca-todos-servicos" placeholder="Buscar serviço...">
+      </div>
+      <div id="lista-todos-servicos-modal" class="tabela-container"></div>
+      <div class="modal-botoes">
+        <button type="button" id="btn-fechar-todos-servicos" class="btn-secundario-claro">Fechar</button>
+      </div>
     </div>
   </div>
 
@@ -140,12 +215,12 @@
     </div>
   </div>
 
-    <!-- MODAL: RECEBER PAGAMENTO DE DÍVIDA -->
+  <!-- MODAL: RECEBER PAGAMENTO DE DÍVIDA -->
   <div id="modal-receber-divida" class="modal-overlay escondido">
     <div class="modal-box">
       <h2>Registrar Recebimento</h2>
       <form id="form-receber-divida">
-        <input type="hidden" id="receber-divida-id">
+        <input type="hidden" id="receber-divida-pedido-id">
         <div class="campo">
           <label for="receber-divida-forma">Forma de pagamento recebida *</label>
           <select id="receber-divida-forma" required>
@@ -163,7 +238,6 @@
       </form>
     </div>
   </div>
-
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
