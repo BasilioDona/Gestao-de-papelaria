@@ -878,3 +878,286 @@ button:disabled {
 .relatorio-card .relatorio-card-topo + .relatorio-subitens {
   margin-top: 10px;
 }
+
+
+/* =========================================================
+   UX RÁPIDO: SERVIÇOS (botões de toque, painel compacto, chips)
+   ========================================================= */
+
+/* Grade de botões de toque rápido para serviços favoritos */
+.servicos-rapidos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.servico-rapido-btn {
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 8px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  margin: 0;
+  transition: all 0.15s;
+}
+
+.servico-rapido-btn:hover,
+.servico-rapido-btn:active {
+  border-color: #2c5f8a;
+  background: #f0f9ff;
+}
+
+.servico-rapido-icone {
+  font-size: 22px;
+}
+
+.servico-rapido-nome {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.2;
+}
+
+.servico-rapido-preco {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.servico-rapido-btn.mais-servicos {
+  border-style: dashed;
+  color: #64748b;
+}
+
+/* Chips de quantidade rápida (1, 5, 10, 20...) */
+.chips-quantidade {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.chip-qtd {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+}
+
+.chip-qtd.selecionado {
+  background: #2c5f8a;
+  border-color: #2c5f8a;
+  color: #fff;
+}
+
+/* Chips de cor (P&B / Colorido) */
+.chips-cor {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.chip-cor {
+  flex: 1;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+}
+
+.chip-cor.selecionado {
+  background: #1e3a5f;
+  border-color: #1e3a5f;
+  color: #fff;
+}
+
+/* Chips de descrição rápida (evita digitar) */
+.chips-descricao {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.chip-descricao {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  width: auto;
+  margin: 0;
+}
+
+.chip-descricao.selecionado {
+  background: #dbeafe;
+  border-color: #2563eb;
+  color: #1e3a5f;
+}
+
+/* Painel de adicionar item — compacto, campos condicionais */
+.painel-item-servico {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+}
+
+.painel-item-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.painel-item-titulo strong {
+  font-size: 15px;
+  color: #1e3a5f;
+}
+
+.btn-fechar-painel {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  width: auto;
+  padding: 4px 8px;
+  margin: 0;
+}
+
+/* Busca de cliente tipo autocomplete */
+.busca-cliente-container {
+  position: relative;
+}
+
+.busca-cliente-resultados {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+  margin-top: 4px;
+}
+
+.busca-cliente-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+.busca-cliente-item:hover {
+  background: #f8fafc;
+}
+
+.cliente-selecionado-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #dbeafe;
+  color: #1e3a5f;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.cliente-selecionado-tag button {
+  background: none;
+  border: none;
+  color: #1e3a5f;
+  width: auto;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Resumo do carrinho compacto (sticky no fundo em mobile) */
+.resumo-pedido-compacto {
+  background: #1e3a5f;
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  bottom: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.resumo-pedido-compacto .total-valor {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.resumo-pedido-compacto .total-label {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Toggle Modo Rápido / Modo Completo */
+.toggle-modo-rapido {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.toggle-modo-rapido span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* Botões de pagamento rápido (dinheiro exato) */
+.btn-pagamento-rapido {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-pagamento-rapido:active {
+  background: #15803d;
+}
