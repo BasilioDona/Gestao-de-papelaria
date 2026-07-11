@@ -34,7 +34,10 @@
     <main class="conteudo">
       <div class="cabecalho-pagina">
         <h1>Produtos</h1>
-        <button id="btn-novo-produto" class="btn-primario">+ Novo Produto</button>
+        <div style="display:flex; gap:8px;">
+          <button id="btn-importar-produtos" class="btn-secundario-claro escondido">Importar CSV</button>
+          <button id="btn-novo-produto" class="btn-primario">+ Novo Produto</button>
+        </div>
       </div>
 
       <div class="campo-busca">
@@ -55,19 +58,18 @@
       <form id="form-produto">
         <input type="hidden" id="produto-id">
 
-        <div class="campo">
-          <label for="produto-codigo">Código *</label>
-          <input type="text" id="produto-codigo" required>
-        </div>
-
-        <div class="campo">
-          <label for="produto-codigo-barras">Código de barras</label>
-          <input type="text" id="produto-codigo-barras">
-        </div>
-
+        <!-- CAMPOS ESSENCIAIS: sempre visíveis -->
         <div class="campo">
           <label for="produto-nome">Nome *</label>
-          <input type="text" id="produto-nome" required>
+          <input type="text" id="produto-nome" required autofocus>
+        </div>
+
+        <div class="campo-com-botao">
+          <div class="campo">
+            <label for="produto-codigo-barras">Código de barras</label>
+            <input type="text" id="produto-codigo-barras" placeholder="Ler com a câmera ou digitar">
+          </div>
+          <button type="button" class="btn-scanner" id="btn-abrir-scanner-produto" title="Ler código de barras">📷</button>
         </div>
 
         <div class="campo">
@@ -77,47 +79,58 @@
           </select>
         </div>
 
-       <div class="campo">
-          <label for="produto-embalagem-nome">Tipo de embalagem de compra</label>
-          <input type="text" id="produto-embalagem-nome" placeholder="Ex: Caixa, Pacote, Resma, Fardo (deixe vazio se não houver)">
-        </div>
-
-        <div class="campo">
-          <label for="produto-unidades-embalagem">Unidades por embalagem *</label>
-          <input type="number" id="produto-unidades-embalagem" min="1" value="1" required>
-          <span class="dica-campo">Ex: 50 (canetas numa caixa). Deixe 1 se o produto é comprado e vendido na mesma unidade.</span>
-        </div>
-
-        <div class="campo">
-          <label for="produto-preco-compra-embalagem">Custo da embalagem inteira (MT)</label>
-          <input type="number" id="produto-preco-compra-embalagem" step="0.01" min="0">
-          <span class="dica-campo" id="dica-custo-unitario">Custo por unidade: 0.00 MT</span>
-        </div>
-
-        <div class="campo">
-          <label for="produto-unidade-venda">Unidade de venda</label>
-          <input type="text" id="produto-unidade-venda" value="unidade" placeholder="Ex: unidade, folha, litro, kg, metro">
-        </div>
-
         <div class="campo">
           <label for="produto-preco-venda">Preço de venda por unidade (MT) *</label>
           <input type="number" id="produto-preco-venda" step="0.01" min="0" required>
         </div>
 
         <div class="campo">
-          <label for="produto-quantidade">Quantidade em estoque (em unidades)</label>
-          <input type="number" id="produto-quantidade" min="0">
-          <span class="dica-campo">Se está a cadastrar pela primeira vez, informe já convertido em unidades (ex: 2 caixas de 50 = 100).</span>
-        </div> 
-
-        <div class="campo">
-          <label for="produto-estoque-minimo">Estoque mínimo</label>
-          <input type="number" id="produto-estoque-minimo" min="0">
+          <label for="produto-quantidade">Quantidade em estoque (unidades)</label>
+          <input type="number" id="produto-quantidade" min="0" value="0">
         </div>
 
-        <div class="campo">
-          <label for="produto-fornecedor">Fornecedor</label>
-          <input type="text" id="produto-fornecedor">
+        <!-- SEÇÃO AVANÇADA: recolhida por padrão -->
+        <button type="button" class="secao-avancada-toggle" id="btn-toggle-avancado">⚙️ Mais opções (embalagem, código, estoque mínimo, fornecedor)</button>
+
+        <div class="secao-avancada-conteudo escondido" id="secao-avancada">
+
+          <div class="campo">
+            <label for="produto-codigo">Código do produto</label>
+            <input type="text" id="produto-codigo" readonly>
+            <span class="dica-campo" id="dica-codigo-produto">Gerado automaticamente.</span>
+          </div>
+
+          <div class="campo">
+            <label for="produto-embalagem-nome">Tipo de embalagem de compra</label>
+            <input type="text" id="produto-embalagem-nome" placeholder="Ex: Caixa, Pacote, Resma, Fardo">
+          </div>
+
+          <div class="campo">
+            <label for="produto-unidades-embalagem">Unidades por embalagem</label>
+            <input type="number" id="produto-unidades-embalagem" min="1" value="1">
+            <span class="dica-campo">Ex: 50 (canetas numa caixa). Deixe 1 se comprado e vendido na mesma unidade.</span>
+          </div>
+
+          <div class="campo">
+            <label for="produto-preco-compra-embalagem">Custo da embalagem inteira (MT)</label>
+            <input type="number" id="produto-preco-compra-embalagem" step="0.01" min="0">
+            <span class="dica-campo" id="dica-custo-unitario">Custo por unidade: 0.00 MT</span>
+          </div>
+
+          <div class="campo">
+            <label for="produto-unidade-venda">Unidade de venda</label>
+            <input type="text" id="produto-unidade-venda" value="unidade" placeholder="Ex: unidade, folha, litro, kg, metro">
+          </div>
+
+          <div class="campo">
+            <label for="produto-estoque-minimo">Estoque mínimo</label>
+            <input type="number" id="produto-estoque-minimo" min="0" value="0">
+          </div>
+
+          <div class="campo">
+            <label for="produto-fornecedor">Fornecedor</label>
+            <input type="text" id="produto-fornecedor">
+          </div>
         </div>
 
         <div id="modal-mensagem-erro" class="mensagem-erro"></div>
@@ -130,7 +143,55 @@
     </div>
   </div>
 
+  <!-- MODAL: IMPORTAÇÃO EM LOTE -->
+  <div id="modal-importar" class="modal-overlay escondido">
+    <div class="modal-box">
+      <h2>Importar Produtos (CSV)</h2>
+
+      <p class="mov-detalhes">
+        O ficheiro CSV deve ter as colunas: <strong>nome, codigo_barras, categoria, preco_compra_embalagem, unidades_por_embalagem, unidade_venda, preco_venda, quantidade, estoque_minimo, fornecedor</strong>.
+        O código do produto é gerado automaticamente — não precisa incluir essa coluna.
+      </p>
+
+      <button type="button" id="btn-baixar-modelo-csv" class="btn-secundario-claro" style="margin:12px 0;">Baixar modelo CSV</button>
+
+      <div class="importacao-dropzone">
+        <input type="file" id="input-arquivo-csv" accept=".csv">
+        <p class="dica-campo" style="margin-top:8px;">Selecione o ficheiro CSV preenchido</p>
+      </div>
+
+      <div id="importacao-preview" class="escondido" style="margin-top:16px;">
+        <h2 style="font-size:14px;">Pré-visualização (<span id="importacao-total-linhas">0</span> produtos)</h2>
+        <div id="importacao-preview-lista" class="tabela-container" style="max-height:200px; overflow-y:auto;"></div>
+      </div>
+
+      <div id="importacao-resultado" class="escondido" style="margin-top:16px;"></div>
+
+      <div id="modal-importar-erro" class="mensagem-erro"></div>
+
+      <div class="modal-botoes">
+        <button type="button" id="btn-cancelar-importar" class="btn-secundario-claro">Fechar</button>
+        <button type="button" id="btn-confirmar-importar" class="btn-primario escondido">Confirmar Importação</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCANNER DE CÓDIGO DE BARRAS (câmera) -->
+  <div id="scanner-overlay" class="scanner-overlay escondido">
+    <div class="scanner-barra-topo">
+      <strong>Aponte para o código de barras</strong>
+      <button type="button" id="btn-fechar-scanner">Fechar ✕</button>
+    </div>
+    <div class="scanner-video-container">
+      <video id="scanner-video" autoplay playsinline muted></video>
+      <div class="scanner-mira"></div>
+    </div>
+    <div class="scanner-status" id="scanner-status">A iniciar câmera...</div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="supabase.js"></script>
   <script src="produtos.js"></script>
 </body>
