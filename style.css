@@ -1161,3 +1161,133 @@ button:disabled {
 .btn-pagamento-rapido:active {
   background: #15803d;
 }
+
+
+/* =========================================================
+   UX PRODUTOS: formulário simplificado, scanner, importação
+   ========================================================= */
+
+.secao-avancada-toggle {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.secao-avancada-conteudo {
+  border-left: 3px solid #e2e8f0;
+  padding-left: 12px;
+  margin-left: 2px;
+}
+
+.campo-com-botao {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.campo-com-botao .campo {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.btn-scanner {
+  background: #1e3a5f;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 18px;
+  width: auto;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.scanner-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+}
+
+.scanner-overlay.escondido { display: none; }
+
+.scanner-video-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#scanner-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner-mira {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 120px;
+  border: 3px solid #22c55e;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
+}
+
+.scanner-barra-topo {
+  background: #111;
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scanner-barra-topo button {
+  width: auto;
+  background: transparent;
+  border: 1px solid #fff;
+  padding: 8px 14px;
+  margin: 0;
+}
+
+.scanner-status {
+  background: #111;
+  color: #d1d5db;
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+}
+
+/* Área de importação em lote */
+.importacao-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 28px 16px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.importacao-resumo-linha {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.importacao-erro-linha {
+  color: #dc2626;
+  font-size: 12px;
+  padding: 4px 0;
+} 
