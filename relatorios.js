@@ -40,6 +40,7 @@ let dadosEmpresaRelatorio = null;
 let dadosVendasRelatorio = null;   // guarda os dados para a exportação de vendas em PDF
 let dadosServicosRelatorio = null; // Guarda os dados calculados do relatório de serviços para o PDF
 let dadosClientesRelatorio = null; // Guarda os dados consolidados do relatório de clientes para o PDF
+let dadosCaixaRelatorio = null;    // Guarda os dados estruturados do relatório de caixas para o PDF
 
 // ===== DATAS PADRÃO: mês atual =====
 const hoje = new Date();
@@ -59,6 +60,7 @@ document.getElementById('filtro-tipo-relatorio').addEventListener('click', (even
   dadosVendasRelatorio = null;
   dadosServicosRelatorio = null;
   dadosClientesRelatorio = null;
+  dadosCaixaRelatorio = null;
 });
 
 // ===== BOTÃO GERAR =====
@@ -78,7 +80,7 @@ document.getElementById('btn-gerar-relatorio').addEventListener('click', () => {
     case 'vendas': gerarRelatorioVendas(inicioISO, fimISO, dataInicio, dataFim); break;
     case 'produtos': gerarRelatorioMaisVendidos(inicioISO, fimISO); break;
     case 'lucro': gerarRelatorioLucro(inicioISO, fimISO); break;
-    case 'caixa': gerarRelatorioCaixa(inicioISO, fimISO); break;
+    case 'caixa': gerarRelatorioCaixa(inicioISO, fimISO, dataInicio, dataFim); break;
     case 'estoque': gerarRelatorioEstoque(); break;
     case 'clientes': gerarRelatorioClientes(inicioISO, fimISO, dataInicio, dataFim); break;
     case 'servicos': gerarRelatorioServicos(inicioISO, fimISO, dataInicio, dataFim); break;
@@ -86,9 +88,23 @@ document.getElementById('btn-gerar-relatorio').addEventListener('click', () => {
   }
 });
 
+// ===== DISPARAR EXPORTAÇÃO SELECIONADA =====
+btnExportarPdf.addEventListener('click', () => {
+  if (tipoAtivo === 'vendas' && dadosVendasRelatorio) {
+    exportarPdfVendas();
+  } else if (tipoAtivo === 'servicos' && dadosServicosRelatorio) {
+    exportarPdfServicos();
+  } else if (tipoAtivo === 'clientes' && dadosClientesRelatorio) {
+    exportarPdfClientes();
+  } else if (tipoAtivo === 'caixa' && dadosCaixaRelatorio) {
+    exportarPdfCaixa();
+  } else if (ultimoRelatorioGerado) {
+    exportarRelatorioSimples();
+  }
+});
+
 // =========================================================
 // INFRAESTRUTURA DE PDF (cabeçalho, rodapé, paginação)
-// Reutilizada por todos os relatórios modernizados
 // =========================================================
 
 async function carregarDadosEmpresaPDF() {
@@ -98,7 +114,6 @@ async function carregarDadosEmpresaPDF() {
   return data;
 }
 
-// Desenha o cabeçalho (empresa + título do relatório + período + gerado por/em) em cada página
 function desenharCabecalhoPDF(doc, tituloRelatorio, periodoTexto, empresa) {
   const largura = doc.internal.pageSize.getWidth();
 
@@ -130,7 +145,6 @@ function desenharCabecalhoPDF(doc, tituloRelatorio, periodoTexto, empresa) {
   doc.line(14, 31, largura - 14, 31);
 }
 
-// Escreve o rodapé (data de emissão + "Página X de Y") em TODAS as páginas já geradas.
 function finalizarRodapePDF(doc) {
   const totalPaginas = doc.internal.getNumberOfPages();
   const largura = doc.internal.pageSize.getWidth();
@@ -157,7 +171,7 @@ function formatarMT(valor) {
 }
 
 // =========================================================
-// 1. RELATÓRIO DE VENDAS — COMPLETO E DETALHADO
+// 1. RELATÓRIO DE VENDAS
 // =========================================================
 async function gerarRelatorioVendas(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
@@ -413,7 +427,9 @@ async function gerarRelatorioMaisVendidos(inicio, fim) {
   prepararExportacao('Produtos Mais Vendidos', lista.map((p) => [p.nome, p.quantidade, formatarMT(p.total)]), ['Produto', 'Qtd.', 'Total']);
 }
 
-// ===== 3. LUCRO (só admin) =====
+// =========================================================
+// 3. LUCRO (só admin)
+// =========================================================
 async function gerarRelatorioLucro(inicio, fim) {
   if (!ehAdmin) return;
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
@@ -472,9 +488,14 @@ async function gerarRelatorioLucro(inicio, fim) {
   prepararExportacao('Relatório de Lucro', linhas.map((l) => [l.nome, l.quantidade, formatarMT(l.receita), formatarMT(l.lucro)]), ['Produto', 'Qtd.', 'Receita', 'Lucro']);
 }
 
-// ===== 4. CAIXA =====
-async function gerarRelatorioCaixa(inicio, fim) {
+// =========================================================
+// 4. RELATÓRIO DE CAIXA (REFORMULADO)
+// =========================================================
+async function gerarRelatorioCaixa(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
+  resumoRelatorio.innerHTML = '';
+  btnExportarPdf.classList.add('escondido');
+  dadosCaixaRelatorio = null;
 
   let query = supabaseClient
     .from('caixas')
@@ -489,117 +510,469 @@ async function gerarRelatorioCaixa(inicio, fim) {
   if (error) { conteudoRelatorio.innerHTML = '<p class="lista-vazia">Erro: ' + error.message + '</p>'; return; }
 
   if (caixas.length === 0) {
-    resumoRelatorio.innerHTML = '';
-    conteudoRelatorio.innerHTML = '<p class="lista-vazia">Nenhum caixa no período.</p>';
+    conteudoRelatorio.innerHTML = '<p class="lista-vazia">Nenhum caixa registado no período selecionado.</p>';
     return;
   }
 
   const idsCaixas = caixas.map((c) => c.id);
 
-  const [{ data: vendas }, { data: servicos }, { data: movs }] = await Promise.all([
-    supabaseClient.from('vendas').select('caixa_id, total, forma_pagamento').in('caixa_id', idsCaixas).eq('status', 'concluida'),
-    supabaseClient.from('servicos').select('caixa_id, valor, forma_pagamento').in('caixa_id', idsCaixas).neq('situacao', 'cancelado'),
-    supabaseClient.from('movimentacoes_caixa').select('caixa_id, tipo, valor').in('caixa_id', idsCaixas)
+  // Consultas agregadas do período
+  const [
+    { data: vendas },
+    { data: servicos },
+    { data: movs },
+    { data: dividasVendas },
+    { data: dividasServicos }
+  ] = await Promise.all([
+    supabaseClient.from('vendas').select('id, numero, total, forma_pagamento, status_pagamento, criado_em, clientes(nome)').in('caixa_id', idsCaixas).eq('status', 'concluida'),
+    supabaseClient.from('servicos').select('id, numero, valor, forma_pagamento, status_pagamento, criado_em, clientes(nome), tipos_servico(nome), tipo, situacao').in('caixa_id', idsCaixas).neq('situacao', 'cancelado'),
+    supabaseClient.from('movimentacoes_caixa').select('id, caixa_id, tipo, valor, motivo, criado_em').in('caixa_id', idsCaixas).order('criado_em', { ascending: false }),
+    supabaseClient.from('vendas').select('id, numero, total, forma_pagamento_recebimento, status_pagamento, criado_em, clientes(nome)').in('caixa_pagamento_id', idsCaixas).eq('status_pagamento', 'pago'),
+    supabaseClient.from('servicos').select('id, numero, valor, forma_pagamento_recebimento, status_pagamento, criado_em, clientes(nome), tipos_servico(nome), tipo').in('caixa_pagamento_id', idsCaixas).eq('status_pagamento', 'pago')
   ]);
 
-  function agruparPorCaixa(lista, campoValor) {
-    const mapa = {};
-    (lista || []).forEach((item) => {
-      if (!mapa[item.caixa_id]) mapa[item.caixa_id] = { total: 0, dinheiro: 0, porForma: {} };
-      const valor = Number(item[campoValor]);
-      mapa[item.caixa_id].total += valor;
-      mapa[item.caixa_id].porForma[item.forma_pagamento] = (mapa[item.caixa_id].porForma[item.forma_pagamento] || 0) + valor;
-      if (item.forma_pagamento === 'dinheiro') mapa[item.caixa_id].dinheiro += valor;
-    });
-    return mapa;
+  // Carregar produtos e quantidades de vendas no período
+  const todosIdsVendas = [...(vendas || []).map((v) => v.id), ...(dividasVendas || []).map((v) => v.id)];
+  let itensVenda = [];
+  if (todosIdsVendas.length > 0) {
+    const { data: listItens } = await supabaseClient
+      .from('itens_venda')
+      .select('venda_id, quantidade, produtos(nome)')
+      .in('venda_id', todosIdsVendas);
+    itensVenda = listItens || [];
   }
 
-  const vendasPorCaixa = agruparPorCaixa(vendas, 'total');
-  const servicosPorCaixa = agruparPorCaixa(servicos, 'valor');
-
-  const movsPorCaixa = {};
-  (movs || []).forEach((m) => {
-    if (!movsPorCaixa[m.caixa_id]) movsPorCaixa[m.caixa_id] = { sangria: 0, suprimento: 0 };
-    movsPorCaixa[m.caixa_id][m.tipo] += Number(m.valor);
+  const itensPorVenda = {};
+  itensVenda.forEach((it) => {
+    if (!itensPorVenda[it.venda_id]) itensPorVenda[it.venda_id] = [];
+    itensPorVenda[it.venda_id].push(it);
   });
 
-  let totalGeralVendas = 0, totalGeralServicos = 0, totalDiferencas = 0;
+  // 1 e 2. Resumo por Forma de Pagamento
+  const FORMAS_RESTRITAS = ['dinheiro', 'mpesa', 'emola', 'transferencia', 'fiado'];
+  const MAP_FORMAS_PT = {
+    dinheiro: 'Dinheiro', mpesa: 'M-Pesa', emola: 'E-Mola', transferencia: 'Transferência Bancária', fiado: 'Fiado'
+  };
+
+  const resumoFormas = {};
+  FORMAS_RESTRITAS.forEach((f) => {
+    resumoFormas[f] = { vendas: 0, servicos: 0, dividas: 0, soma: 0 };
+  });
+
+  // Vendas normais
+  (vendas || []).forEach((v) => {
+    const f = v.forma_pagamento;
+    if (resumoFormas[f]) resumoFormas[f].vendas += Number(v.total || 0);
+  });
+
+  // Serviços normais
+  (servicos || []).forEach((s) => {
+    const f = s.forma_pagamento;
+    if (resumoFormas[f]) resumoFormas[f].servicos += Number(s.valor || 0);
+  });
+
+  // Dívidas recebidas de Vendas
+  (dividasVendas || []).forEach((dv) => {
+    const f = dv.forma_pagamento_recebimento;
+    if (resumoFormas[f]) resumoFormas[f].dividas += Number(dv.total || 0);
+  });
+
+  // Dívidas recebidas de Serviços
+  (dividasServicos || []).forEach((ds) => {
+    const f = ds.forma_pagamento_recebimento;
+    if (resumoFormas[f]) resumoFormas[f].dividas += Number(ds.valor || 0);
+  });
+
+  // Soma geral das formas de pagamento
+  FORMAS_RESTRITAS.forEach((f) => {
+    resumoFormas[f].soma = resumoFormas[f].vendas + resumoFormas[f].servicos + resumoFormas[f].dividas;
+  });
+
+  // 3. Movimentações do Caixa (Sangrias e Suprimentos)
+  const sangrias = (movs || []).filter((m) => m.tipo === 'sangria');
+  const suprimentos = (movs || []).filter((m) => m.tipo === 'suprimento');
+
+  const totalSangrias = sangrias.reduce((acc, m) => acc + Number(m.valor || 0), 0);
+  const totalSuprimentos = suprimentos.reduce((acc, m) => acc + Number(m.valor || 0), 0);
+
+  // 4. Histórico detalhado por Forma de Pagamento
+  const historico = {};
+  FORMAS_RESTRITAS.forEach((f) => {
+    historico[f] = { vendas: [], servicos: [] };
+  });
+
+  // Organizar Vendas no histórico
+  [...(vendas || []), ...(dividasVendas || [])].forEach((v) => {
+    const f = v.forma_pagamento_recebimento || v.forma_pagamento;
+    if (historico[f]) {
+      const items = itensPorVenda[v.id] || [];
+      const produtosTexto = items.map((it) => `${it.quantidade}x ${it.produtos ? it.produtos.nome : 'Produto'}`).join(', ') || 'Nenhum';
+      const qtdTotal = items.reduce((acc, it) => acc + it.quantidade, 0);
+
+      historico[f].vendas.push({
+        numero: String(v.numero).padStart(4, '0'),
+        cliente: v.clientes ? v.clientes.nome : 'Consumidor Final',
+        data: new Date(v.criado_em).toLocaleString('pt-BR'),
+        produtos: produtosTexto,
+        quantidade: qtdTotal,
+        total: Number(v.total)
+      });
+    }
+  });
+
+  // Organizar Serviços no histórico
+  [...(servicos || []), ...(dividasServicos || [])].forEach((s) => {
+    const f = s.forma_pagamento_recebimento || s.forma_pagamento;
+    if (historico[f]) {
+      historico[f].servicos.push({
+        numero: String(s.numero).padStart(4, '0'),
+        cliente: s.clientes ? s.clientes.nome : 'Sem Cliente',
+        tipo: s.tipos_servico ? s.tipos_servico.nome : (s.tipo || 'Geral'),
+        data: new Date(s.criado_em).toLocaleString('pt-BR'),
+        valor: Number(s.valor)
+      });
+    }
+  });
+
+  // 5 e 6. Resumo Geral e Fórmula de Saldo
+  const totalVendasPeriodo = Object.values(resumoFormas).reduce((acc, curr) => acc + curr.vendas, 0);
+  const totalServicosPeriodo = Object.values(resumoFormas).reduce((acc, curr) => acc + curr.servicos, 0);
+  const totalDividasPeriodo = Object.values(resumoFormas).reduce((acc, curr) => acc + curr.dividas, 0);
+
+  // Saldo final = (vendas + serviços + dívidas recebidas + suprimentos) - sangrias
+  const saldoFinal = (totalVendasPeriodo + totalServicosPeriodo + totalDividasPeriodo + totalSuprimentos) - totalSangrias;
+
+  // 8. Salvar na variável global dadosCaixaRelatorio
+  dadosCaixaRelatorio = {
+    periodoTexto: formatarPeriodo(dataInicioStr, dataFimStr),
+    resumoFormas,
+    movimentacoes: movs || [],
+    sangrias,
+    suprimentos,
+    historico,
+    totais: {
+      dinheiro: resumoFormas.dinheiro.soma,
+      mpesa: resumoFormas.mpesa.soma,
+      emola: resumoFormas.emola.soma,
+      transferencia: resumoFormas.transferencia.soma,
+      fiado: resumoFormas.fiado.soma,
+      totalSangrias,
+      totalSuprimentos,
+      saldoFinal
+    }
+  };
+
+  // Renderização Visual na UI do Relatório
+  resumoRelatorio.innerHTML = `
+    <div class="card"><span class="card-titulo">Caixas Monitorizados</span><span class="card-valor">${caixas.length}</span></div>
+    <div class="card"><span class="card-titulo">Suprimentos (+)</span><span class="card-valor" style="color:#16a34a;">${formatarMT(totalSuprimentos)}</span></div>
+    <div class="card"><span class="card-titulo">Sangrias (-)</span><span class="card-valor" style="color:#dc2626;">${formatarMT(totalSangrias)}</span></div>
+    <div class="card"><span class="card-titulo">Saldo Geral</span><span class="card-valor">${formatarMT(saldoFinal)}</span></div>
+  `;
 
   conteudoRelatorio.innerHTML = '';
 
-  caixas.forEach((c) => {
-    const vInfo = vendasPorCaixa[c.id] || { total: 0, dinheiro: 0, porForma: {} };
-    const sInfo = servicosPorCaixa[c.id] || { total: 0, dinero: 0, porForma: {} };
-    const movInfo = movsPorCaixa[c.id] || { sangria: 0, suprimento: 0 };
-    const nomeFuncionario = c.usuarios ? c.usuarios.nome : '-';
-
-    const valorEsperado = Number(c.valor_abertura) + (vInfo.dinheiro || 0) + (sInfo.dinheiro || 0) + movInfo.suprimento - movInfo.sangria;
-    const temFechamento = c.valor_fechamento !== null;
-    const diferenca = temFechamento ? Number(c.valor_fechamento) - valorEsperado : null;
-
-    totalGeralVendas += vInfo.total;
-    totalGeralServicos += sInfo.total;
-    if (diferenca !== null) totalDiferencas += diferenca;
-
-    let classeDiferenca = 'relatorio-diferenca-zero';
-    let textoDiferenca = '';
-    if (diferenca !== null) {
-      if (diferenca > 0) { classeDiferenca = 'relatorio-diferenca-positiva'; textoDiferenca = 'Sobra de ' + formatarMT(diferenca); }
-      else if (diferenca < 0) { classeDiferenca = 'relatorio-diferenca-negativa'; textoDiferenca = 'Falta de ' + formatarMT(Math.abs(diferenca)); }
-      else { textoDiferenca = 'Confere exatamente'; }
-    }
-
-    const div = document.createElement('div');
-    div.className = 'relatorio-card';
-    div.innerHTML = `
-      <div class="relatorio-card-topo">
-        <div>
-          <div class="relatorio-linha-titulo">${escapeHTML(nomeFuncionario)} <span class="caixa-status-tag ${c.status}">${c.status}</span></div>
-          <div class="relatorio-linha-detalhe">
-            Aberto: ${new Date(c.aberto_em).toLocaleString('pt-BR')}
-            ${c.fechado_em ? '• Fechado: ' + new Date(c.fechado_em).toLocaleString('pt-BR') : ''}
-          </div>
-        </div>
-      </div>
-      <div class="relatorio-subitens">
-        <div class="relatorio-subitem"><span>Valor de abertura</span><span>${formatarMT(c.valor_abertura)}</span></div>
-        <div class="relatorio-subitem"><span>Vendas (todas as formas)</span><span>${formatarMT(vInfo.total)}</span></div>
-        <div class="relatorio-subitem"><span>Serviços (todas as formas)</span><span>${formatarMT(sInfo.total)}</span></div>
-        <div class="relatorio-subitem"><span>Suprimentos</span><span>+${formatarMT(movInfo.suprimento)}</span></div>
-        <div class="relatorio-subitem"><span>Sangrias</span><span>-${formatarMT(movInfo.sangria)}</span></div>
-        <div class="relatorio-subitem" style="font-weight:700;"><span>Valor esperado (dinheiro)</span><span>${formatarMT(valorEsperado)}</span></div>
-        ${temFechamento ? `
-          <div class="relatorio-subitem"><span>Valor contado no fechamento</span><span>${formatarMT(c.valor_fechamento)}</span></div>
-          <div class="relatorio-subitem ${classeDiferenca}"><span>Diferença</span><span>${textoDiferenca}</span></div>
-        ` : ''}
-        ${c.observacoes_fechamento ? `<div class="relatorio-subitem"><span>Observações</span><span>${escapeHTML(c.observacoes_fechamento)}</span></div>` : ''}
-      </div>
-    `;
-    conteudoRelatorio.appendChild(div);
-  });
-
-  resumoRelatorio.innerHTML = `
-    <div class="card"><span class="card-titulo">Caixas no período</span><span class="card-valor">${caixas.length}</span></div>
-    <div class="card"><span class="card-titulo">Total vendas</span><span class="card-valor">${formatarMT(totalGeralVendas)}</span></div>
-    <div class="card"><span class="card-titulo">Total serviços</span><span class="card-valor">${formatarMT(totalGeralServicos)}</span></div>
-    <div class="card"><span class="card-titulo">Diferenças acumuladas</span><span class="card-valor">${formatarMT(totalDiferencas)}</span></div>
+  // Card HTML - Resumos por Forma de Pagamento
+  const cardFormas = document.createElement('div');
+  cardFormas.className = 'relatorio-card';
+  cardFormas.innerHTML = `
+    <div class="relatorio-linha-titulo" style="margin-bottom:12px;">Fluxo por Forma de Pagamento</div>
+    <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; font-weight: bold;">
+          <th style="padding: 8px 4px;">Forma</th>
+          <th style="padding: 8px 4px; text-align: right;">Vendas</th>
+          <th style="padding: 8px 4px; text-align: right;">Serviços</th>
+          <th style="padding: 8px 4px; text-align: right;">Dívidas Quitadas</th>
+          <th style="padding: 8px 4px; text-align: right;">Soma Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${FORMAS_RESTRITAS.map((f) => `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 8px 4px; font-weight: bold;">${MAP_FORMAS_PT[f]}</td>
+            <td style="padding: 8px 4px; text-align: right;">${formatarMT(resumoFormas[f].vendas)}</td>
+            <td style="padding: 8px 4px; text-align: right;">${formatarMT(resumoFormas[f].servicos)}</td>
+            <td style="padding: 8px 4px; text-align: right;">${formatarMT(resumoFormas[f].dividas)}</td>
+            <td style="padding: 8px 4px; text-align: right; font-weight: bold; color: #1e3a8a;">${formatarMT(resumoFormas[f].soma)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
   `;
+  conteudoRelatorio.appendChild(cardFormas);
 
-  prepararExportacao('Relatório Detalhado de Caixa', caixas.map((c) => {
-    const vInfo = vendasPorCaixa[c.id] || { total: 0 };
-    const sInfo = servicosPorCaixa[c.id] || { total: 0 };
-    return [
-      c.usuarios ? c.usuarios.nome : '-',
-      new Date(c.aberto_em).toLocaleDateString('pt-BR'),
-      c.status,
-      formatarMT(vInfo.total),
-      formatarMT(sInfo.total),
-      c.valor_fechamento !== null ? formatarMT(c.valor_fechamento) : '-'
-    ];
-  }), ['Funcionário', 'Data', 'Status', 'Vendas', 'Serviços', 'Fechamento']);
+  // Card HTML - Movimentações
+  const cardMovs = document.createElement('div');
+  cardMovs.className = 'relatorio-card';
+  cardMovs.innerHTML = `
+    <div class="relatorio-linha-titulo" style="margin-bottom:12px;">Movimentações do Caixa (Sangrias e Suprimentos)</div>
+    ${(movs || []).length === 0 ? '<p class="lista-vazia">Nenhuma movimentação registada.</p>' : `
+      <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+        <thead>
+          <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; font-weight: bold;">
+            <th style="padding: 6px 4px;">Data e Hora</th>
+            <th style="padding: 6px 4px;">Tipo</th>
+            <th style="padding: 6px 4px;">Observação/Motivo</th>
+            <th style="padding: 6px 4px; text-align: right;">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${movs.map((m) => `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <td style="padding: 6px 4px;">${new Date(m.criado_em).toLocaleString('pt-BR')}</td>
+              <td style="padding: 6px 4px; font-weight: bold; color: ${m.tipo === 'sangria' ? '#dc2626' : '#16a34a'};">${m.tipo === 'sangria' ? 'Sangria (-)' : 'Suprimento (+)'}</td>
+              <td style="padding: 6px 4px;">${escapeHTML(m.motivo || 'Nenhum informado')}</td>
+              <td style="padding: 6px 4px; text-align: right; font-weight: bold; color: ${m.tipo === 'sangria' ? '#dc2626' : '#16a34a'};">${formatarMT(m.valor)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `}
+  `;
+  conteudoRelatorio.appendChild(cardMovs);
+
+  // Card HTML - Resumo Final Consolidado
+  const cardResumoFinal = document.createElement('div');
+  cardResumoFinal.className = 'relatorio-card';
+  cardResumoFinal.style.background = '#f8fafc';
+  cardResumoFinal.innerHTML = `
+    <div class="relatorio-linha-titulo" style="margin-bottom:12px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">Fechamento Geral do Período</div>
+    <div class="relatorio-subitem"><span>Dinheiro Total</span><strong>${formatarMT(resumoFormas.dinheiro.soma)}</strong></div>
+    <div class="relatorio-subitem"><span>M-Pesa Total</span><strong>${formatarMT(resumoFormas.mpesa.soma)}</strong></div>
+    <div class="relatorio-subitem"><span>E-Mola Total</span><strong>${formatarMT(resumoFormas.emola.soma)}</strong></div>
+    <div class="relatorio-subitem"><span>Transferência Bancária Total</span><strong>${formatarMT(resumoFormas.transferencia.soma)}</strong></div>
+    <div class="relatorio-subitem"><span>Fiado Total</span><strong>${formatarMT(resumoFormas.fiado.soma)}</strong></div>
+    <div class="relatorio-subitem" style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 6px;"><span>Total Suprimentos (+)</span><strong style="color: #16a34a;">${formatarMT(totalSuprimentos)}</strong></div>
+    <div class="relatorio-subitem"><span>Total Sangrias (-)</span><strong style="color: #dc2626;">${formatarMT(totalSangrias)}</strong></div>
+    <div class="relatorio-subitem" style="font-size: 15px; font-weight: bold; border-top: 2px solid #1e293b; margin-top: 8px; padding-top: 8px; color: #1e3a8a;">
+      <span>SALDO FINAL DE CAIXA</span>
+      <span>${formatarMT(saldoFinal)}</span>
+    </div>
+  `;
+  conteudoRelatorio.appendChild(cardResumoFinal);
+
+  ultimoRelatorioGerado = null;
+  btnExportarPdf.classList.remove('escondido');
 }
 
-// ===== 5. ESTOQUE =====
+// =========================================================
+// 7. EXPORTAR PDF CAIXA EXCLUSIVO (jsPDF & jspdf-autotable)
+// =========================================================
+async function exportarPdfCaixa() {
+  const empresa = await carregarDadosEmpresaPDF();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const d = dadosCaixaRelatorio;
+
+  const FORMAS_RESTRITAS = ['dinheiro', 'mpesa', 'emola', 'transferencia', 'fiado'];
+  const MAP_FORMAS_PT = {
+    dinheiro: 'Dinheiro', mpesa: 'M-Pesa', emola: 'E-Mola', transferencia: 'Transferência Bancária', fiado: 'Fiado'
+  };
+
+  desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa);
+  let y = 36;
+
+  // Secção 1: Resumo por Forma de Pagamento
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('1. Resumo por Forma de Pagamento', 14, y);
+  y += 4;
+
+  const resumoLinhas = FORMAS_RESTRITAS.map((f) => {
+    const rf = d.resumoFormas[f];
+    return [
+      MAP_FORMAS_PT[f],
+      formatarMT(rf.vendas),
+      formatarMT(rf.servicos),
+      formatarMT(rf.dividas),
+      formatarMT(rf.soma)
+    ];
+  });
+
+  doc.autoTable({
+    startY: y,
+    head: [['Forma de Pagamento', 'Total Vendas', 'Total Serviços', 'Dívidas Quitadas', 'Soma Geral']],
+    body: resumoLinhas,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [44, 95, 138] },
+    columnStyles: {
+      1: { halign: 'right' },
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right', fontStyle: 'bold' }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa)
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Secção 2: Movimentações do Caixa
+  if (y > 230) { doc.addPage(); y = 36; }
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('2. Movimentações do Caixa', 14, y);
+  y += 4;
+
+  const movsLinhas = d.movimentacoes.map((m) => [
+    new Date(m.criado_em).toLocaleString('pt-BR'),
+    m.tipo === 'sangria' ? 'Sangria' : 'Suprimento',
+    m.motivo || 'Nenhum informado',
+    (m.tipo === 'sangria' ? '-' : '+') + ' ' + formatarMT(m.valor)
+  ]);
+
+  doc.autoTable({
+    startY: y,
+    head: [['Data e Hora', 'Tipo', 'Motivo ou Observação', 'Valor']],
+    body: movsLinhas.length > 0 ? movsLinhas : [['-', 'Sem movimentações registadas', '-', '0,00 MT']],
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [44, 95, 138] },
+    columnStyles: {
+      3: { halign: 'right', fontStyle: 'bold' }
+    },
+    didParseCell: function (dataHook) {
+      if (dataHook.section === 'body' && movsLinhas.length > 0) {
+        const item = d.movimentacoes[dataHook.row.index];
+        if (item && item.tipo === 'sangria') {
+          dataHook.cell.styles.textColor = [185, 28, 28]; // Vermelho
+        } else if (item && item.tipo === 'suprimento') {
+          dataHook.cell.styles.textColor = [22, 163, 74]; // Verde
+        }
+      }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa)
+  });
+
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Secção 3: Histórico Detalhado por Forma de Pagamento
+  if (y > 220) { doc.addPage(); y = 36; }
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('3. Histórico Detalhado por Forma de Pagamento', 14, y);
+  y += 5;
+
+  for (const f of FORMAS_RESTRITAS) {
+    const vList = d.historico[f].vendas;
+    const sList = d.historico[f].servicos;
+
+    if (vList.length === 0 && sList.length === 0) continue;
+
+    if (y > 240) { doc.addPage(); y = 36; }
+    doc.setFontSize(9.5);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Transações em ${MAP_FORMAS_PT[f]}`, 14, y);
+    y += 4;
+
+    // Sub-tabela de Vendas
+    if (vList.length > 0) {
+      if (y > 250) { doc.addPage(); y = 36; }
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.text('Vendas:', 14, y);
+      y += 2;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Nº Venda', 'Cliente', 'Data e Hora', 'Produtos Vendidos', 'Qtd', 'Valor Total']],
+        body: vList.map((v) => [v.numero, v.cliente, v.data, v.produtos, v.quantidade, formatarMT(v.total)]),
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 1.5 },
+        headStyles: { fillColor: [100, 116, 139] },
+        columnStyles: {
+          4: { halign: 'center' },
+          5: { halign: 'right', fontStyle: 'bold' }
+        },
+        margin: { top: 32 },
+        didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa)
+      });
+      y = doc.lastAutoTable.finalY + 5;
+    }
+
+    // Sub-tabela de Serviços
+    if (sList.length > 0) {
+      if (y > 250) { doc.addPage(); y = 36; }
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.text('Serviços:', 14, y);
+      y += 2;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Nº Serviço', 'Cliente', 'Tipo de Serviço', 'Data e Hora', 'Valor']],
+        body: sList.map((s) => [s.numero, s.cliente, s.tipo, s.data, formatarMT(s.valor)]),
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 1.5 },
+        headStyles: { fillColor: [100, 116, 139] },
+        columnStyles: {
+          4: { halign: 'right', fontStyle: 'bold' }
+        },
+        margin: { top: 32 },
+        didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa)
+      });
+      y = doc.lastAutoTable.finalY + 6;
+    }
+    y += 2;
+  }
+
+  // Secção 4: Resumo Geral e Fechamento
+  if (y > 210) { doc.addPage(); y = 36; }
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'bold');
+  doc.text('4. Resumo Geral e Balanço do Caixa', 14, y);
+  y += 4;
+
+  doc.autoTable({
+    startY: y,
+    head: [['Indicador de Fechamento', 'Soma do Período']],
+    body: [
+      ['Total recebido em Dinheiro', formatarMT(d.totais.dinheiro)],
+      ['Total recebido por M-Pesa', formatarMT(d.totais.mpesa)],
+      ['Total recebido por E-Mola', formatarMT(d.totais.emola)],
+      ['Total recebido por Transferência Bancária', formatarMT(d.totais.transferencia)],
+      ['Total recebido por Fiado', formatarMT(d.totais.fiado)],
+      ['Total das Sangrias', formatarMT(d.totais.totalSangrias)],
+      ['Total dos Suprimentos', formatarMT(d.totais.totalSuprimentos)],
+      ['SALDO FINAL EM CAIXA', formatarMT(d.totais.saldoFinal)]
+    ],
+    theme: 'grid',
+    styles: { fontSize: 8.5, cellPadding: 2 },
+    headStyles: { fillColor: [30, 58, 95] },
+    columnStyles: {
+      1: { halign: 'right', fontStyle: 'bold' }
+    },
+    didParseCell: function (dataHook) {
+      if (dataHook.section === 'body') {
+        if (dataHook.row.index === 5) {
+          dataHook.cell.styles.textColor = [185, 28, 28]; // Sangrias
+        }
+        if (dataHook.row.index === 6) {
+          dataHook.cell.styles.textColor = [22, 163, 74]; // Suprimentos
+        }
+        if (dataHook.row.index === 7) {
+          dataHook.cell.styles.fillColor = [241, 245, 249];
+          dataHook.cell.styles.fontSize = 9.5;
+          if (dataHook.column.index === 1) {
+            dataHook.cell.styles.textColor = d.totais.saldoFinal >= 0 ? [30, 58, 95] : [185, 28, 28];
+          }
+        }
+      }
+    },
+    margin: { top: 32 },
+    didDrawPage: () => desenharCabecalhoPDF(doc, 'Relatório Avançado de Caixa', d.periodoTexto, empresa)
+  });
+
+  finalizarRodapePDF(doc);
+  doc.save('relatorio_caixa_' + new Date().toISOString().split('T')[0] + '.pdf');
+}
+
+// =========================================================
+// 5. RELATÓRIO DE ESTOQUE
+// =========================================================
 async function gerarRelatorioEstoque() {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
 
@@ -634,14 +1007,13 @@ async function gerarRelatorioEstoque() {
 }
 
 // =========================================================
-// 6. RELATÓRIO DE CLIENTES — COMPLETO E DETALHADO (MODERNIZADO)
+// 6. RELATÓRIO DE CLIENTES (MODERNIZADO)
 // =========================================================
 async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
   resumoRelatorio.innerHTML = '';
   btnExportarPdf.classList.add('escondido');
 
-  // 1. Busca todos os clientes ativos
   const { data: clientes, error: errC } = await supabaseClient
     .from('clientes')
     .select('id, nome, telefone')
@@ -650,7 +1022,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
 
   if (errC) { conteudoRelatorio.innerHTML = '<p class="lista-vazia">Erro: ' + errC.message + '</p>'; return; }
 
-  // 2. Busca histórico de Vendas e Serviços no período para cruzar os dados financeiros
   const [{ data: vendas }, { data: servicos }] = await Promise.all([
     supabaseClient.from('vendas').select('cliente_id, total, status_pagamento').gte('criado_em', inicio).lte('criado_em', fim).eq('status', 'concluida'),
     supabaseClient.from('servicos').select('cliente_id, valor, status_pagamento').gte('criado_em', inicio).lte('criado_em', fim).neq('situacao', 'cancelado')
@@ -660,7 +1031,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
   let totalGeralConsumido = 0;
   let totalGeralDivida = 0;
 
-  // Processa dados vindos de Vendas
   (vendas || []).forEach((v) => {
     if (!v.cliente_id) return;
     if (!mapaFinanceiro[v.cliente_id]) {
@@ -677,7 +1047,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
     }
   });
 
-  // Processa dados vindos de Serviços
   (servicos || []).forEach((s) => {
     if (!s.cliente_id) return;
     if (!mapaFinanceiro[s.cliente_id]) {
@@ -694,13 +1063,11 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
     }
   });
 
-  // Consolida e ordena do cliente que mais consumiu para o menor
   const clientesProcessados = clientes.map((c) => {
     const fin = mapaFinanceiro[c.id] || { qtdVendas: 0, qtdServicos: 0, totalVendas: 0, totalServicos: 0, totalGasto: 0, totalDivida: 0 };
     return { ...c, ...fin };
   }).sort((a, b) => b.totalGasto - a.totalGasto);
 
-  // ----- Resumo Visual por Cards Superiores -----
   resumoRelatorio.innerHTML = `
     <div class="card"><span class="card-titulo">Clientes Ativos</span><span class="card-valor">${clientes.length}</span></div>
     <div class="card"><span class="card-titulo">Faturamento Total</span><span class="card-valor">${formatarMT(totalGeralConsumido)}</span></div>
@@ -709,7 +1076,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
 
   conteudoRelatorio.innerHTML = '';
 
-  // Renderização individual na tela
   clientesProcessados.forEach((c) => {
     const div = document.createElement('div');
     div.className = 'relatorio-card';
@@ -740,7 +1106,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
     conteudoRelatorio.appendChild(div);
   });
 
-  // ----- Bloco de Totais Finais Destacado -----
   const cardTotais = document.createElement('div');
   cardTotais.className = 'relatorio-card';
   cardTotais.style.background = '#f0f9ff';
@@ -753,7 +1118,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
   `;
   conteudoRelatorio.appendChild(cardTotais);
 
-  // Cacheamento estruturado para injeção nativa no AutoTable PDF
   dadosClientesRelatorio = {
     clientesProcessados, totalGeralConsumido, totalGeralDivida,
     periodoTexto: formatarPeriodo(dataInicioStr, dataFimStr)
@@ -762,7 +1126,6 @@ async function gerarRelatorioClientes(inicio, fim, dataInicioStr, dataFimStr) {
   btnExportarPdf.classList.remove('escondido');
 }
 
-// ===== EXPORTAÇÃO EM PDF: CLIENTES (Modernizado via AutoTable) =====
 async function exportarPdfClientes() {
   const empresa = await carregarDadosEmpresaPDF();
   const { jsPDF } = window.jspdf;
@@ -789,7 +1152,7 @@ async function exportarPdfClientes() {
       if (dataHook.section === 'body') {
         const itemCliente = d.clientesProcessados[dataHook.row.index];
         if (itemCliente && itemCliente.totalDivida > 0) {
-          dataHook.cell.styles.textColor = [185, 28, 28]; // vermelho escuro para dívidas
+          dataHook.cell.styles.textColor = [185, 28, 28];
           if (dataHook.column.index === 5) {
             dataHook.cell.styles.fontStyle = 'bold';
           }
@@ -803,7 +1166,6 @@ async function exportarPdfClientes() {
   let y = doc.lastAutoTable.finalY + 6;
   if (y > 240) { doc.addPage(); y = 20; }
 
-  // Tabela resumida de rodapé do PDF
   doc.autoTable({
     startY: y,
     head: [['Balanço do Período', '']],
@@ -824,7 +1186,7 @@ async function exportarPdfClientes() {
 }
 
 // =========================================================
-// 7. RELATÓRIO DE SERVIÇOS — COMPLETO E DETALHADO (MODERNIZADO)
+// 7. RELATÓRIO DE SERVIÇOS (MODERNIZADO)
 // =========================================================
 async function gerarRelatorioServicos(inicio, fim, dataInicioStr, dataFimStr) {
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
@@ -1024,7 +1386,9 @@ async function exportarPdfServicos() {
   doc.save('relatorio_servicos_' + new Date().toISOString().split('T')[0] + '.pdf');
 }
 
-// ===== 8. FUNCIONÁRIOS (desempenho — só admin) =====
+// =========================================================
+// 8. RELATÓRIO DE FUNCIONÁRIOS (DESEMPENHO)
+// =========================================================
 async function gerarRelatorioFuncionarios(inicio, fim) {
   if (!ehAdmin) return;
   conteudoRelatorio.innerHTML = '<p class="lista-vazia">Carregando...</p>';
@@ -1080,52 +1444,54 @@ async function gerarRelatorioFuncionarios(inicio, fim) {
     conteudoRelatorio.appendChild(div);
   });
 
-  prepararExportacao('Desempenho por Funcionário', lista.map((f) => [f.nome, f.qtdVendas, formatarMT(f.totalVendas), f.qtdServicos, formatarMT(f.totalServicos)]), ['Funcionário', 'Vendas', 'Total Vendas', 'Serviços', 'Total Serviços']);
+  prepararExportacao(
+    'Desempenho por Funcionário',
+    lista.map((f) => [f.nome, f.qtdVendas, formatarMT(f.totalVendas), f.qtdServicos, formatarMT(f.totalServicos)]),
+    ['Funcionário', 'Qtd Vendas', 'Total Vendas', 'Qtd Serviços', 'Total Serviços']
+  );
 }
 
-// ===== PREPARA DADOS PARA EXPORTAÇÃO SIMPLES (relatórios ainda não modernizados) =====
-function prepararExportacao(titulo, lines, colunas) {
-  ultimoRelatorioGerado = { titulo, linhas: lines, colunas };
+// =========================================================
+// INFRAESTRUTURA DE APOIO PARA EXPORTAÇÃO SIMPLES
+// =========================================================
+function prepararExportacao(titulo, dados, cabecalhos) {
+  ultimoRelatorioGerado = { titulo, dados, cabecalhos };
   btnExportarPdf.classList.remove('escondido');
 }
 
-// ===== BOTÃO EXPORTAR PDF (decide qual gerador usar) =====
-btnExportarPdf.addEventListener('click', async () => {
-  if (tipoAtivo === 'vendas' && dadosVendasRelatorio) {
-    await exportarPdfVendas();
-    return;
-  }
-
-  if (tipoAtivo === 'servicos' && dadosServicosRelatorio) {
-    await exportarPdfServicos();
-    return;
-  }
-
-  if (tipoAtivo === 'clientes' && dadosClientesRelatorio) {
-    await exportarPdfClientes();
-    return;
-  }
-
+async function exportarRelatorioSimples() {
   if (!ultimoRelatorioGerado) return;
-
   const empresa = await carregarDadosEmpresaPDF();
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+
   const dataInicio = document.getElementById('data-inicio').value;
   const dataFim = document.getElementById('data-fim').value;
   const periodoTexto = formatarPeriodo(dataInicio, dataFim);
 
+  desenharCabecalhoPDF(doc, ultimoRelatorioGerado.titulo, periodoTexto, empresa);
+
   doc.autoTable({
     startY: 36,
-    head: [ultimoRelatorioGerado.colunas],
-    body: ultimoRelatorioGerado.linhas,
+    head: [ultimoRelatorioGerado.cabecalhos],
+    body: ultimoRelatorioGerado.dados,
     theme: 'grid',
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: { fontSize: 8.5, cellPadding: 2 },
     headStyles: { fillColor: [44, 95, 138] },
     margin: { top: 32 },
     didDrawPage: () => desenharCabecalhoPDF(doc, ultimoRelatorioGerado.titulo, periodoTexto, empresa)
   });
 
   finalizarRodapePDF(doc);
-  doc.save(ultimoRelatorioGerado.titulo.toLowerCase().replace(/\s+/g, '_') + '.pdf');
-});
+  doc.save('relatorio_' + ultimoRelatorioGerado.titulo.toLowerCase().replace(/\s+/g, '_') + '.pdf');
+}
+
+function escapeHTML(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
