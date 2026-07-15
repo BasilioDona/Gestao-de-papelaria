@@ -68,3 +68,23 @@ registrarAtividade();
 
 // Verifica inatividade a cada 1 minuto
 setInterval(verificarInatividade, 60 * 1000);
+
+// =========================================================
+// MENU MOBILE RECOLHÍVEL (funciona em qualquer página que tenha
+// o botão #btn-menu-toggle e a nav #menu-lateral)
+// =========================================================
+document.addEventListener('DOMContentLoaded', () => {
+  const btnMenuToggle = document.getElementById('btn-menu-toggle');
+  const menuLateral = document.getElementById('menu-lateral');
+
+  if (!btnMenuToggle || !menuLateral) return; // página sem menu (ex: login) — não faz nada
+
+  btnMenuToggle.addEventListener('click', () => {
+    menuLateral.classList.toggle('menu-aberto');
+  });
+
+  // Fecha o menu automaticamente ao tocar num link
+  menuLateral.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => menuLateral.classList.remove('menu-aberto'));
+  });
+});
