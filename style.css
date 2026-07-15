@@ -1290,4 +1290,458 @@ button:disabled {
   color: #dc2626;
   font-size: 12px;
   padding: 4px 0;
-} 
+}
+
+
+/* =========================================================
+   DASHBOARD MODERNO — ERP style
+   ========================================================= */
+
+/* ----- Menu mobile recolhível ----- */
+.btn-menu-toggle {
+  display: none;
+  width: auto;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin: 0 10px 0 0;
+  font-size: 16px;
+}
+
+.topbar {
+  position: relative;
+}
+
+@media (max-width: 760px) {
+  .btn-menu-toggle { display: inline-block; }
+
+  .menu-lateral {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    z-index: 80;
+  }
+
+  .menu-lateral.menu-aberto {
+    display: flex;
+  }
+
+  .menu-lateral a {
+    padding: 14px 20px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+}
+
+/* ----- Saudação + relógio ----- */
+.dash-boasvindas {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  animation: dashFadeInUp 0.4s ease both;
+}
+
+.dash-boasvindas h1 {
+  font-size: 22px;
+  color: #1e3a5f;
+  margin: 0;
+}
+
+.dash-subtitulo {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.dash-relogio {
+  text-align: right;
+}
+
+.dash-hora {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e3a5f;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-data {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+/* ----- Cards principais ----- */
+.dash-cards-principais {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.dash-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+  border-left: 5px solid transparent;
+  animation: dashFadeInUp 0.4s ease both;
+  transition: transform 0.15s;
+}
+
+.dash-card:hover {
+  transform: translateY(-2px);
+}
+
+.dash-cards-principais .dash-card:nth-child(1) { animation-delay: 0.05s; }
+.dash-cards-principais .dash-card:nth-child(2) { animation-delay: 0.1s; }
+.dash-cards-principais .dash-card:nth-child(3) { animation-delay: 0.15s; }
+.dash-cards-principais .dash-card:nth-child(4) { animation-delay: 0.2s; }
+
+.dash-card-azul { border-left-color: #2c5f8a; }
+.dash-card-roxo { border-left-color: #7c3aed; }
+.dash-card-laranja { border-left-color: #d97706; }
+.dash-card-verde { border-left-color: #16a34a; }
+.dash-card-cinza { border-left-color: #94a3b8; }
+
+.dash-card-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dash-card-icone {
+  font-size: 26px;
+}
+
+.dash-trend-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.dash-trend-up { background: #dcfce7; color: #16a34a; }
+.dash-trend-down { background: #fee2e2; color: #dc2626; }
+.dash-trend-alerta { background: #fef3c7; color: #d97706; }
+.dash-trend-neutro { background: #f1f5f9; color: #64748b; }
+
+.dash-card-valor {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dash-card-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 4px;
+}
+
+.dash-card-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* ----- Indicadores rápidos ----- */
+.dash-indicadores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.dash-indicador-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  animation: dashFadeInUp 0.4s ease both;
+}
+
+.dash-indicador-icone {
+  font-size: 20px;
+}
+
+.dash-indicador-valor {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-top: 4px;
+}
+
+.dash-indicador-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ----- Resumo financeiro ----- */
+.dash-resumo-financeiro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dash-resumo-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  animation: dashFadeInUp 0.4s ease both;
+}
+
+.dash-resumo-icone {
+  font-size: 24px;
+}
+
+.dash-resumo-valor {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dash-resumo-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.dash-resumo-destaque {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.dash-resumo-alerta {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+}
+
+/* ----- Formas de pagamento (cards com barra) ----- */
+.dash-formas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.dash-forma-card {
+  border-radius: 12px;
+  padding: 14px;
+  animation: dashFadeInUp 0.4s ease both;
+}
+
+.dash-forma-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dash-forma-nome {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dash-forma-percent {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dash-forma-valor {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.dash-forma-barra-fundo {
+  background: rgba(255,255,255,0.6);
+  border-radius: 20px;
+  height: 6px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.dash-forma-barra-preenchida {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.6s ease;
+}
+
+.dash-forma-nota {
+  font-size: 10px;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+/* ----- Alertas ----- */
+.dash-alertas-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0 12px;
+}
+
+.dash-alertas-contagem {
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 12px;
+}
+
+.dash-alerta-card {
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  animation: dashFadeInUp 0.3s ease both;
+}
+
+.dash-alerta-vermelho { background: #fef2f2; border-left: 4px solid #dc2626; }
+.dash-alerta-laranja { background: #fffbeb; border-left: 4px solid #d97706; }
+
+.dash-alerta-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.dash-alerta-icone { font-size: 16px; }
+
+.dash-alerta-titulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dash-alerta-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dash-alerta-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #475569;
+  padding: 3px 0;
+}
+
+/* ----- Gráficos ----- */
+.dash-graficos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.grafico-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  animation: dashFadeInUp 0.5s ease both;
+}
+
+.grafico-card-largo {
+  grid-column: 1 / -1;
+}
+
+.grafico-card h3 {
+  font-size: 13px;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.grafico-canvas-wrap {
+  position: relative;
+  height: 240px;
+}
+
+/* ----- Últimas transações ----- */
+.dash-lista-transacoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.dash-transacao-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  animation: dashFadeInUp 0.3s ease both;
+}
+
+.dash-transacao-info {
+  min-width: 0;
+}
+
+.dash-transacao-titulo {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.dash-transacao-detalhe {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.dash-transacao-direita {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dash-badge-pagamento {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.dash-badge-pagamento.pago { background: #dcfce7; color: #16a34a; }
+.dash-badge-pagamento.pendente { background: #fef3c7; color: #d97706; }
+
+/* ----- Animações ----- */
+@keyframes dashFadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ----- Responsividade mobile geral ----- */
+@media (max-width: 480px) {
+  .dash-boasvindas { flex-direction: column; align-items: flex-start; }
+  .dash-relogio { text-align: left; }
+  .grafico-canvas-wrap { height: 200px; }
+}
