@@ -11,6 +11,7 @@
   <div class="app-container">
 
     <header class="topbar">
+      <button class="btn-menu-toggle" id="btn-menu-toggle" aria-label="Abrir menu">☰</button>
       <div class="topbar-titulo">
         <span id="nome-usuario"></span>
         <span id="tipo-usuario" class="badge"></span>
@@ -32,53 +33,133 @@
     </nav>
 
     <main class="conteudo">
-      <h1>Dashboard</h1>
 
-      <div class="cards-grid">
-        <div class="card">
-          <span class="card-titulo">Vendido hoje</span>
-          <span class="card-valor" id="card-vendido-hoje">0,00 MT</span>
+      <!-- ===== SAUDAÇÃO + RELÓGIO ===== -->
+      <div class="dash-boasvindas">
+        <div>
+          <h1 id="dash-saudacao">Olá,</h1>
+          <p class="dash-subtitulo" id="dash-subtitulo">Aqui está o resumo do seu negócio hoje</p>
         </div>
-        <div class="card">
-          <span class="card-titulo">Serviços hoje</span>
-          <span class="card-valor" id="card-servicos-hoje">0</span>
-        </div>
-        <div class="card">
-          <span class="card-titulo">Produtos em falta</span>
-          <span class="card-valor" id="card-produtos-falta">0</span>
-        </div>
-        <div class="card">
-          <span class="card-titulo">Caixa</span>
-          <span class="card-valor" id="card-status-caixa">Fechado</span>
+        <div class="dash-relogio">
+          <div class="dash-hora" id="dash-hora">--:--:--</div>
+          <div class="dash-data" id="dash-data">-</div>
         </div>
       </div>
 
-      <div id="area-alertas-admin" class="escondido" style="margin-top:8px;">
-        <h2>Alertas</h2>
+      <!-- ===== CARDS PRINCIPAIS ===== -->
+      <div class="dash-cards-principais" id="dash-cards-principais">
+
+        <div class="dash-card dash-card-azul">
+          <div class="dash-card-topo">
+            <div class="dash-card-icone">💰</div>
+            <span class="dash-card-trend" id="trend-vendido-hoje"></span>
+          </div>
+          <div class="dash-card-valor" id="card-vendido-hoje">0,00 MT</div>
+          <div class="dash-card-titulo">Vendido Hoje</div>
+          <div class="dash-card-desc">Total de vendas concluídas</div>
+        </div>
+
+        <div class="dash-card dash-card-roxo">
+          <div class="dash-card-topo">
+            <div class="dash-card-icone">🖨️</div>
+            <span class="dash-card-trend" id="trend-servicos-hoje"></span>
+          </div>
+          <div class="dash-card-valor" id="card-servicos-hoje">0</div>
+          <div class="dash-card-titulo">Serviços Hoje</div>
+          <div class="dash-card-desc">Pedidos realizados no dia</div>
+        </div>
+
+        <div class="dash-card dash-card-laranja">
+          <div class="dash-card-topo">
+            <div class="dash-card-icone">📦</div>
+            <span class="dash-card-trend" id="trend-produtos-falta"></span>
+          </div>
+          <div class="dash-card-valor" id="card-produtos-falta">0</div>
+          <div class="dash-card-titulo">Produtos em Falta</div>
+          <div class="dash-card-desc">Estoque baixo ou esgotado</div>
+        </div>
+
+        <div class="dash-card dash-card-verde" id="card-caixa-wrapper">
+          <div class="dash-card-topo">
+            <div class="dash-card-icone">🗄️</div>
+            <span class="dash-card-trend" id="trend-caixa"></span>
+          </div>
+          <div class="dash-card-valor" id="card-status-caixa">Fechado</div>
+          <div class="dash-card-titulo">Meu Caixa</div>
+          <div class="dash-card-desc">Situação atual da sessão</div>
+        </div>
+
+      </div>
+
+      <!-- ===== INDICADORES RÁPIDOS (admin) ===== -->
+      <div id="area-indicadores-rapidos" class="escondido">
+        <h2>Indicadores Rápidos</h2>
+        <div class="dash-indicadores-grid" id="grid-indicadores-rapidos">
+          <p class="lista-vazia">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- ===== RESUMO FINANCEIRO DO DIA ===== -->
+      <h2>Resumo Financeiro do Dia</h2>
+      <div class="dash-resumo-financeiro-grid" id="grid-resumo-financeiro">
+        <p class="lista-vazia">Carregando...</p>
+      </div>
+
+      <!-- ===== ARRECADAÇÃO POR FORMA DE PAGAMENTO ===== -->
+      <h2>Arrecadação por Forma de Pagamento</h2>
+      <div class="dash-formas-grid" id="grid-formas-pagamento">
+        <p class="lista-vazia">Carregando...</p>
+      </div>
+
+      <!-- ===== ALERTAS (admin) ===== -->
+      <div id="area-alertas-admin" class="escondido">
+        <div class="dash-alertas-cabecalho">
+          <h2 style="margin:0;">Alertas</h2>
+          <span class="dash-alertas-contagem" id="contagem-alertas">0</span>
+        </div>
         <div id="lista-alertas" class="tabela-container">
           <p class="lista-vazia">Carregando...</p>
         </div>
       </div>
 
-      <h2>Arrecadação de hoje por forma de pagamento</h2>
-      <div id="resumo-formas-hoje" class="tabela-container">
+      <!-- ===== GRÁFICOS ===== -->
+      <h2>Análise Gráfica</h2>
+      <div class="dash-graficos-grid">
+        <div class="grafico-card">
+          <h3>Vendas por Forma de Pagamento (hoje)</h3>
+          <div class="grafico-canvas-wrap"><canvas id="grafico-barras-formas"></canvas></div>
+        </div>
+        <div class="grafico-card">
+          <h3>Distribuição da Arrecadação (hoje)</h3>
+          <div class="grafico-canvas-wrap"><canvas id="grafico-pizza-formas"></canvas></div>
+        </div>
+        <div class="grafico-card grafico-card-largo">
+          <h3>Vendas e Serviços — Últimos 7 dias</h3>
+          <div class="grafico-canvas-wrap"><canvas id="grafico-linha-7dias"></canvas></div>
+        </div>
+        <div class="grafico-card grafico-card-largo">
+          <h3>Comparativo: Vendas vs Serviços (7 dias)</h3>
+          <div class="grafico-canvas-wrap"><canvas id="grafico-comparativo"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ===== ÚLTIMAS TRANSAÇÕES ===== -->
+      <h2>Últimas Vendas</h2>
+      <div id="lista-ultimas-vendas" class="dash-lista-transacoes">
         <p class="lista-vazia">Carregando...</p>
       </div>
 
-      <h2>Últimas vendas</h2>
-      <div id="lista-ultimas-vendas" class="tabela-container">
+      <h2>Últimos Serviços</h2>
+      <div id="lista-ultimos-servicos" class="dash-lista-transacoes">
         <p class="lista-vazia">Carregando...</p>
       </div>
 
-      <h2>Últimos serviços</h2>
-      <div id="lista-ultimos-servicos" class="tabela-container">
-        <p class="lista-vazia">Carregando...</p>
-      </div>
     </main>
 
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="supabase.js"></script>
   <script src="dashboard.js"></script>
 </body>
