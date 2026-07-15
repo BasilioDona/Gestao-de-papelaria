@@ -21,13 +21,6 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
   window.location.href = 'index.html';
 });
 
-// ===== MENU MOBILE (recolhível) =====
-document.getElementById('btn-menu-toggle').addEventListener('click', () => {
-  document.getElementById('menu-lateral').classList.toggle('menu-aberto');
-});
-document.querySelectorAll('#menu-lateral a').forEach((link) => {
-  link.addEventListener('click', () => document.getElementById('menu-lateral').classList.remove('menu-aberto'));
-});
 
 const NOMES_PAGAMENTO_DASH = {
   dinheiro: 'Dinheiro', mpesa: 'M-Pesa', emola: 'e-Mola', transferencia: 'Transferência Bancária', fiado: 'Fiado'
