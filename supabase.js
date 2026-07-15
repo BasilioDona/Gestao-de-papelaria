@@ -69,22 +69,24 @@ registrarAtividade();
 // Verifica inatividade a cada 1 minuto
 setInterval(verificarInatividade, 60 * 1000);
 
+
+
 // =========================================================
-// MENU MOBILE RECOLHÍVEL (funciona em qualquer página que tenha
-// o botão #btn-menu-toggle e a nav #menu-lateral)
+// MENU MOBILE RECOLHÍVEL (delegação de eventos — funciona em
+// qualquer página, independente da ordem/timing dos scripts)
 // =========================================================
-document.addEventListener('DOMContentLoaded', () => {
-  const btnMenuToggle = document.getElementById('btn-menu-toggle');
-  const menuLateral = document.getElementById('menu-lateral');
+document.addEventListener('click', (event) => {
+  // Clicou no botão ☰ ?
+  if (event.target && event.target.id === 'btn-menu-toggle') {
+    const menuLateral = document.getElementById('menu-lateral');
+    if (menuLateral) menuLateral.classList.toggle('menu-aberto');
+    return;
+  }
 
-  if (!btnMenuToggle || !menuLateral) return; // página sem menu (ex: login) — não faz nada
-
-  btnMenuToggle.addEventListener('click', () => {
-    menuLateral.classList.toggle('menu-aberto');
-  });
-
-  // Fecha o menu automaticamente ao tocar num link
-  menuLateral.querySelectorAll('a').forEach((link) => {
-    link.addEventListener('click', () => menuLateral.classList.remove('menu-aberto'));
-  });
+  // Clicou num link dentro do menu? Fecha o menu automaticamente
+  const linkClicado = event.target.closest ? event.target.closest('#menu-lateral a') : null;
+  if (linkClicado) {
+    const menuLateral = document.getElementById('menu-lateral');
+    if (menuLateral) menuLateral.classList.remove('menu-aberto');
+  }
 });
